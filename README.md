@@ -12,11 +12,13 @@ The plugin supports individual WordPress sites. On multisite, activate and manag
 
 ## Managing content
 
-Add a title, plain-text description, and public HTTPS SpotWalla link for each track, trip, or retrospective. Use the public/embed link provided by SpotWalla, and ensure the remote content is publicly accessible. Accepted hosts are `spotwalla.com`, `www.spotwalla.com`, and `new.spotwalla.com`. No API credentials are needed.
+The settings page opens on the **Maps** tab. Use it to add a title, plain-text description, and public HTTPS SpotWalla link for each track, trip, or retrospective. Use the public/embed link provided by SpotWalla, and ensure the remote content is publicly accessible. Accepted hosts are `spotwalla.com`, `www.spotwalla.com`, and `new.spotwalla.com`. No API credentials are needed.
 
-To group entries, first create an entry with type **Gallery**, then select it in the **Gallery group** field of individual entries. Each entry can belong to one group; groups cannot be nested. IDs are shown in the management table. Entries can be edited or deleted; deleting a group retains its entries as ungrouped content. Entry types cannot be changed after creation.
+To group maps, first create a gallery on the **Galleries** tab, then select one or more galleries in a map's **Galleries** field on the **Maps** tab. A map can belong to multiple galleries; galleries cannot be nested. IDs are shown in each tab's table. Maps and galleries can be edited or deleted; deleting a gallery retains its maps. Types cannot be changed after creation.
 
-**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each entry's background/text/link colors, width, and map height (200–2400px). Custom widths shrink to fit the available space. Group styling applies to its container; members retain their individual settings. These settings style the plugin's cards, not the contents of SpotWalla's cross-origin maps.
+Each map has **Show title** and **Show description** settings, both enabled by default. Displaying a map by its own ID always uses these settings. Within a gallery, the gallery's **Map titles** and **Map descriptions** options can use each map's setting (the default), or show or hide that element for all its maps. Hiding a title also hides its link to SpotWalla; the iframe retains the title for accessibility. Gallery titles and descriptions are always shown.
+
+**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's background/text/link colors, width, and map height (200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's cards, not the contents of SpotWalla's cross-origin maps.
 
 ## Embedding in pages or posts
 
@@ -26,15 +28,17 @@ Use a WordPress **Shortcode** block (or a classic editor shortcode):
 [spotwalla_gallery id="123"]
 ```
 
-Replace `123` with an entry or gallery group ID. An entry renders its title, description, public link, and lazy-loaded map iframe; a group renders its members in creation order. Missing or invalid IDs render nothing. The same shortcode can be used more than once on a page.
+Replace `123` with a map or gallery ID. A map renders its visible title/link, visible description, and lazy-loaded iframe; a gallery renders its maps in creation order, applying its visibility overrides. Missing or invalid IDs render nothing. The same shortcode can be used more than once on a page.
 
-SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link. Loading maps sends requests to SpotWalla; account for this in your site's privacy policy and consent configuration.
+SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link when it is shown. Loading maps sends requests to SpotWalla; account for this in your site's privacy policy and consent configuration.
 
 ## Storage and deactivation
 
-Activation creates two custom tables using the site's WordPress database prefix: `{prefix}SW_items` and `{prefix}SW_settings`. All plugin configuration and content are stored there, not in WordPress posts or options.
+Activation creates three custom tables using the site's WordPress database prefix: `{prefix}SW_items`, `{prefix}SW_settings`, and `{prefix}SW_gallery_items`. All plugin configuration and content are stored there, not in WordPress posts or options.
 
-By default, deactivation retains both tables for reactivation. In **Data retention**, check and save **Permanently delete all plugin tables, settings, and entries on deactivation** to opt into irreversible deletion. Back up first. Reactivation after deletion creates an empty gallery. Deleting plugin files after a retaining deactivation leaves the data in the database.
+Updating from 1.0.0 automatically upgrades the tables and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
+
+By default, deactivation retains all tables for reactivation. In **Data retention**, check and save **Permanently delete all plugin tables, settings, maps, and galleries on deactivation** to opt into irreversible deletion. Back up first. Reactivation after deletion creates an empty gallery. Deleting plugin files after a retaining deactivation leaves the data in the database.
 
 ## Validation
 
@@ -42,7 +46,7 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, create and edit each entry type and a group, embed their IDs in a page, check theme/custom styling and narrow-screen widths, delete a group, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check both tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 
