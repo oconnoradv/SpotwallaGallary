@@ -18,7 +18,21 @@ To group maps, first create a gallery on the **Galleries** tab, then select one 
 
 Each map has **Show title** and **Show description** settings, both enabled by default. Displaying a map by its own ID always uses these settings. Within a gallery, the gallery's **Map titles** and **Map descriptions** options can use each map's setting (the default), or show or hide that element for all its maps. Hiding a title also hides its link to SpotWalla; the iframe retains the title for accessibility. Gallery titles and descriptions are always shown.
 
-**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's background/text/link colors, width, and map height (200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's cards, not the contents of SpotWalla's cross-origin maps.
+### Map density
+
+Each map has a **Density/Fill percentage** setting matching the SpotWalla trip viewer's **Trip Adjustments > Density/Fill Percentage** values: None, 0.1, 0.3, 0.5, 1, 3, 5, 10–90%, or All (100%). It controls how many locations SpotWalla draws. The default, **SpotWalla trip setting**, leaves the embed link unchanged so the trip's own configuration applies. Otherwise, the plugin adds SpotWalla's `fillFactor` parameter to the embedded map's URL.
+
+A gallery's **Map density in this gallery** option uses each map's setting by default, or applies one value to every trip map displayed in that gallery. Displaying a map by its own ID always uses the map's setting.
+
+Density applies to **trips** only. SpotWalla's retrospective viewer ignores it, and it is not applied to tracks or retrospectives.
+
+### Map layer and picture icons
+
+SpotWalla does not currently support setting the initial map layer (Streets, Terrain, Satellite, Satellite/Streets) or picture-icon visibility through the embed link; its viewer always starts on Streets with picture icons shown. Configure these in SpotWalla instead: set the trip's initial map type on the **Options** tab of the trip in SpotWalla's Trip Manager. Visitors can still change the layer and show/hide picture icons from the embedded map's controls. Because the map is a cross-origin iframe, the plugin cannot operate those controls.
+
+### Description appearance and map dimensions
+
+**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's **Description background color**, **Description text and link color**, and **Custom map dimensions** (width and map height, 200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's title and description cards, not the contents of SpotWalla's cross-origin maps.
 
 ## Embedding in pages or posts
 
@@ -36,7 +50,7 @@ SpotWalla controls whether a URL can be embedded. If the remote page is unavaila
 
 Activation creates three custom tables using the site's WordPress database prefix: `{prefix}SW_items`, `{prefix}SW_settings`, and `{prefix}SW_gallery_items`. All plugin configuration and content are stored there, not in WordPress posts or options.
 
-Updating from 1.0.0 automatically upgrades the tables and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
+Updating from 1.0.0 or 1.0.1 automatically upgrades the tables (adding the density setting) and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
 
 By default, deactivation retains all tables for reactivation. In **Data retention**, check and save **Permanently delete all plugin tables, settings, maps, and galleries on deactivation** to opt into irreversible deletion. Back up first. Reactivation after deletion creates an empty gallery. Deleting plugin files after a retaining deactivation leaves the data in the database.
 
@@ -46,7 +60,7 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check both tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check both tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SpotWalla Gallery
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and gallery groups.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: MIT
@@ -14,9 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class SW_Gallery {
-	const DB_VERSION = '2';
-	const MAP_TYPES  = array( 'track', 'trip', 'retrospective' );
-	const OVERRIDES  = array( 'item', 'show', 'hide' );
+	const DB_VERSION   = '3';
+	const MAP_TYPES    = array( 'track', 'trip', 'retrospective' );
+	const OVERRIDES    = array( 'item', 'show', 'hide' );
+	// Density/Fill Percentage values offered by the SpotWalla trip viewer (fillFactor).
+	const FILL_FACTORS = array( '0' => 'None', '0.1' => '0.1%', '0.3' => '0.3%', '0.5' => '0.5%', '1' => '1%', '3' => '3%', '5' => '5%', '10' => '10%', '20' => '20%', '30' => '30%', '40' => '40%', '50' => '50%', '60' => '60%', '70' => '70%', '80' => '80%', '90' => '90%', '100' => 'All (100%)' );
 
 	private static function table( $name ) {
 		global $wpdb;
@@ -48,6 +50,7 @@ final class SW_Gallery {
 				show_description tinyint(1) NOT NULL DEFAULT 1,
 				member_title varchar(10) NOT NULL DEFAULT 'item',
 				member_description varchar(10) NOT NULL DEFAULT 'item',
+				fill_factor varchar(5) NOT NULL DEFAULT '',
 				inherit_theme tinyint(1) NOT NULL DEFAULT 1,
 				background varchar(7) NOT NULL DEFAULT '#ffffff',
 				color varchar(7) NOT NULL DEFAULT '#222222',
@@ -181,6 +184,11 @@ final class SW_Gallery {
 		return in_array( $value, self::OVERRIDES, true ) ? $value : null;
 	}
 
+	private static function fill_factor( $value ) {
+		$value = (string) $value;
+		return '' === $value || array_key_exists( $value, self::FILL_FACTORS ) ? $value : null;
+	}
+
 	public static function save() {
 		self::authorize( 'sw_gallery_save' );
 		global $wpdb;
@@ -203,7 +211,8 @@ final class SW_Gallery {
 		$gallery_ids        = $is_gallery ? array() : self::posted_ids( 'gallery_ids' );
 		$member_title       = $is_gallery ? self::override( 'member_title' ) : 'item';
 		$member_description = $is_gallery ? self::override( 'member_description' ) : 'item';
-		if ( null === $gallery_ids || null === $member_title || null === $member_description ) {
+		$fill_factor        = self::fill_factor( self::posted( 'fill_factor' ) );
+		if ( null === $gallery_ids || null === $member_title || null === $member_description || null === $fill_factor ) {
 			self::redirect( 'invalid', $tab );
 		}
 		if ( $gallery_ids ) {
@@ -222,6 +231,7 @@ final class SW_Gallery {
 			'show_description'   => $is_gallery || '1' === self::posted( 'show_description' ) ? 1 : 0,
 			'member_title'       => $member_title,
 			'member_description' => $member_description,
+			'fill_factor'        => $fill_factor,
 			'inherit_theme'      => '1' === self::posted( 'inherit_theme' ) ? 1 : 0,
 			'background'         => sanitize_hex_color( self::posted( 'background' ) ) ?: '#ffffff',
 			'color'              => sanitize_hex_color( self::posted( 'color' ) ) ?: '#222222',
@@ -285,6 +295,18 @@ final class SW_Gallery {
 		<?php
 	}
 
+	private static function fill_select( $value, $is_gallery ) {
+		$label = $is_gallery ? 'Map density in this gallery' : 'Density/Fill percentage';
+		?>
+		<tr><th><label for="sw-fill-factor"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-fill-factor" name="fill_factor">
+			<option value="" <?php selected( $value, '' ); ?>><?php echo esc_html( $is_gallery ? "Use each map's setting" : 'SpotWalla trip setting' ); ?></option>
+			<?php foreach ( self::FILL_FACTORS as $key => $text ) : ?>
+				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( (string) $value, (string) $key ); ?>><?php echo esc_html( $text ); ?></option>
+			<?php endforeach; ?>
+		</select><p class="description"><?php echo esc_html( $is_gallery ? 'Overrides the density of every trip map shown in this gallery.' : 'Sets SpotWalla\'s Density/Fill Percentage (number of locations shown). Applies to trips only.' ); ?></p></td></tr>
+		<?php
+	}
+
 	public static function admin() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -311,7 +333,7 @@ final class SW_Gallery {
 			$by_item[ $relation['item_id'] ][] = $relation['gallery_id'];
 			$counts[ $relation['gallery_id'] ] = ( isset( $counts[ $relation['gallery_id'] ] ) ? $counts[ $relation['gallery_id'] ] : 0 ) + 1;
 		}
-		$defaults = array( 'id' => 0, 'type' => $is_gallery ? 'gallery' : 'trip', 'title' => '', 'description' => '', 'url' => '', 'show_title' => 1, 'show_description' => 1, 'member_title' => 'item', 'member_description' => 'item', 'inherit_theme' => 1, 'background' => '#ffffff', 'color' => '#222222', 'width' => 800, 'height' => 450 );
+		$defaults = array( 'id' => 0, 'type' => $is_gallery ? 'gallery' : 'trip', 'title' => '', 'description' => '', 'url' => '', 'show_title' => 1, 'show_description' => 1, 'member_title' => 'item', 'member_description' => 'item', 'fill_factor' => '', 'inherit_theme' => 1, 'background' => '#ffffff', 'color' => '#222222', 'width' => 800, 'height' => 450 );
 		$item     = $edit ?: $defaults;
 		$selected = $edit && ! $is_gallery ? self::gallery_ids_for( $edit['id'] ) : array();
 		$noun     = $is_gallery ? 'gallery' : 'map';
@@ -365,6 +387,7 @@ final class SW_Gallery {
 					<?php if ( $is_gallery ) : ?>
 						<?php self::override_select( 'member_title', 'Map titles in this gallery', $item['member_title'] ); ?>
 						<?php self::override_select( 'member_description', 'Map descriptions in this gallery', $item['member_description'] ); ?>
+						<?php self::fill_select( $item['fill_factor'], true ); ?>
 					<?php else : ?>
 						<tr><th><label for="sw-url">Public SpotWalla URL</label></th><td><input type="url" class="large-text" id="sw-url" name="url" required value="<?php echo esc_attr( $item['url'] ); ?>"><p class="description">Use the HTTPS public or embed link supplied by SpotWalla.</p></td></tr>
 						<tr><th>Visibility</th><td><fieldset><legend class="screen-reader-text">Visibility</legend>
@@ -372,6 +395,7 @@ final class SW_Gallery {
 							<label><input type="checkbox" name="show_description" value="1" <?php checked( $item['show_description'], 1 ); ?>> Show description</label>
 							<p class="description">A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla.</p>
 						</fieldset></td></tr>
+						<?php self::fill_select( $item['fill_factor'], false ); ?>
 						<tr><th>Galleries</th><td><fieldset><legend class="screen-reader-text">Galleries</legend>
 							<?php foreach ( $galleries as $gallery ) : ?>
 								<label><input type="checkbox" name="gallery_ids[]" value="<?php echo esc_attr( $gallery['id'] ); ?>" <?php checked( in_array( (int) $gallery['id'], $selected, true ) ); ?>> <?php echo esc_html( $gallery['title'] . ' (#' . $gallery['id'] . ')' ); ?></label><br>
@@ -383,10 +407,10 @@ final class SW_Gallery {
 							<?php endif; ?>
 						</fieldset></td></tr>
 					<?php endif; ?>
-					<tr><th>Appearance</th><td><label><input type="checkbox" name="inherit_theme" value="1" <?php checked( $item['inherit_theme'], 1 ); ?>> Inherit site theme (ignore custom colors and dimensions)</label></td></tr>
-					<tr><th><label for="sw-background">Background color</label></th><td><input type="color" id="sw-background" name="background" value="<?php echo esc_attr( $item['background'] ); ?>"></td></tr>
-					<tr><th><label for="sw-color">Text and link color</label></th><td><input type="color" id="sw-color" name="color" value="<?php echo esc_attr( $item['color'] ); ?>"></td></tr>
-					<tr><th>Custom dimensions</th><td>
+					<tr><th>Description appearance</th><td><label><input type="checkbox" name="inherit_theme" value="1" <?php checked( $item['inherit_theme'], 1 ); ?>> Inherit site theme (ignore custom colors and dimensions)</label></td></tr>
+					<tr><th><label for="sw-background">Description background color</label></th><td><input type="color" id="sw-background" name="background" value="<?php echo esc_attr( $item['background'] ); ?>"></td></tr>
+					<tr><th><label for="sw-color">Description text and link color</label></th><td><input type="color" id="sw-color" name="color" value="<?php echo esc_attr( $item['color'] ); ?>"></td></tr>
+					<tr><th>Custom map dimensions</th><td>
 						<label for="sw-width">Width (px)</label> <input type="number" id="sw-width" name="width" min="200" max="2400" value="<?php echo esc_attr( $item['width'] ); ?>">
 						<?php if ( ! $is_gallery ) : ?>
 							<label for="sw-height">Map height (px)</label> <input type="number" id="sw-height" name="height" min="200" max="2400" value="<?php echo esc_attr( $item['height'] ); ?>">
@@ -455,6 +479,15 @@ final class SW_Gallery {
 		return ! isset( $item[ 'show_' . $field ] ) || '1' === (string) $item[ 'show_' . $field ];
 	}
 
+	private static function embed_url( $url, $item, $gallery ) {
+		if ( 'trip' !== $item['type'] ) {
+			return $url;
+		}
+		$fill = $gallery && isset( $gallery['fill_factor'] ) && '' !== (string) $gallery['fill_factor'] ? $gallery['fill_factor'] : ( isset( $item['fill_factor'] ) ? $item['fill_factor'] : '' );
+		$fill = self::fill_factor( $fill );
+		return null === $fill || '' === $fill ? $url : add_query_arg( 'fillFactor', $fill, $url );
+	}
+
 	private static function card( $item, $gallery = null ) {
 		$url = self::public_url( $item['url'] );
 		if ( ! $url ) {
@@ -469,7 +502,7 @@ final class SW_Gallery {
 		if ( self::visible( $item, $gallery, 'description' ) ) {
 			$html .= '<p>' . nl2br( esc_html( $item['description'] ) ) . '</p>';
 		}
-		return $html . '<iframe src="' . esc_url( $url ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
+		return $html . '<iframe src="' . esc_url( self::embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
 			'</article>';
 	}
 
