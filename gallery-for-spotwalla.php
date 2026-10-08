@@ -3,13 +3,14 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: gallery-for-spotwalla
+ * Domain Path: /languages
  */
 
 /*
@@ -34,38 +35,59 @@ final class Gallery_For_SpotWalla {
 	/**
 	 * Plugin slug, used as the admin page slug.
 	 */
-	const SLUG         = 'gallery-for-spotwalla';
+	const SLUG                = 'gallery-for-spotwalla';
 	/**
 	 * Database schema version; install() runs again when the stored version is lower.
 	 */
-	const DB_VERSION   = '3';
+	const DB_VERSION          = '4';
+	/**
+	 * Prefix of the plugin's tables, added after the site's database prefix.
+	 */
+	const TABLE_PREFIX        = 'SpotGal_';
+	/**
+	 * Table prefix used before version 1.0.3; data is imported from these tables.
+	 */
+	const LEGACY_TABLE_PREFIX = 'SW_';
 	/**
 	 * Source repository, linked from the About tab.
 	 */
-	const REPOSITORY   = 'https://github.com/oconnoradv/SpotwallaGallary';
+	const REPOSITORY          = 'https://github.com/oconnoradv/SpotwallaGallary';
 	/**
 	 * Item types managed on the Maps tab. Galleries use the type "gallery".
 	 */
-	const MAP_TYPES    = array( 'track', 'trip', 'retrospective' );
+	const MAP_TYPES           = array( 'track', 'trip', 'retrospective' );
 	/**
 	 * Gallery visibility overrides: use each map's setting, or show or hide for all maps.
 	 */
-	const OVERRIDES    = array( 'item', 'show', 'hide' );
+	const OVERRIDES           = array( 'item', 'show', 'hide' );
 	/**
 	 * Density/Fill Percentage values offered by the SpotWalla trip viewer (fillFactor),
 	 * as value => label. An empty value means use the trip's own setting.
 	 */
-	const FILL_FACTORS = array( '0' => 'None', '0.1' => '0.1%', '0.3' => '0.3%', '0.5' => '0.5%', '1' => '1%', '3' => '3%', '5' => '5%', '10' => '10%', '20' => '20%', '30' => '30%', '40' => '40%', '50' => '50%', '60' => '60%', '70' => '70%', '80' => '80%', '90' => '90%', '100' => 'All (100%)' );
+	const FILL_FACTORS        = array( '0' => 'None', '0.1' => '0.1%', '0.3' => '0.3%', '0.5' => '0.5%', '1' => '1%', '3' => '3%', '5' => '5%', '10' => '10%', '20' => '20%', '30' => '30%', '40' => '40%', '50' => '50%', '60' => '60%', '70' => '70%', '80' => '80%', '90' => '90%', '100' => 'All (100%)' );
 
 	/**
 	 * Returns the full name of one of the plugin's tables.
 	 *
-	 * @param string $name Table suffix: items, settings, or gallery_items.
+	 * @param string $name   Table suffix: items, settings, or gallery_items.
+	 * @param string $prefix Plugin table prefix. Pass LEGACY_TABLE_PREFIX for the
+	 *                       tables used before version 1.0.3.
 	 * @return string Table name including the site's database prefix.
 	 */
-	private static function table( $name ) {
+	private static function table( $name, $prefix = self::TABLE_PREFIX ) {
 		global $wpdb;
-		return $wpdb->prefix . 'SW_' . $name;
+		return $wpdb->prefix . $prefix . $name;
+	}
+
+	/**
+	 * Checks whether a database table exists.
+	 *
+	 * @param string $table Full table name.
+	 * @return bool
+	 */
+	private static function table_exists( $table ) {
+		global $wpdb;
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 	}
 
 	/**
@@ -84,20 +106,17 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Creates or upgrades the plugin tables with dbDelta() and records the schema version.
+	 * Creates or upgrades one set of plugin tables with dbDelta().
 	 *
-	 * Also adds the default data-retention setting and copies 1.0.0 single-gallery
-	 * assignments (items.gallery_id) into the gallery_items table. The version is
-	 * not recorded if that migration fails, so it is retried on the next load.
-	 *
+	 * @param string $prefix Plugin table prefix: TABLE_PREFIX or LEGACY_TABLE_PREFIX.
 	 * @return void
 	 */
-	private static function install() {
+	private static function create_tables( $prefix ) {
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		$items     = self::table( 'items' );
-		$settings  = self::table( 'settings' );
-		$relations = self::table( 'gallery_items' );
+		$items     = self::table( 'items', $prefix );
+		$settings  = self::table( 'settings', $prefix );
+		$relations = self::table( 'gallery_items', $prefix );
 		$charset   = $wpdb->get_charset_collate();
 		dbDelta(
 			"CREATE TABLE $items (
@@ -134,10 +153,70 @@ final class Gallery_For_SpotWalla {
 				KEY item_id (item_id)
 			) $charset;"
 		);
+	}
+
+	/**
+	 * Moves data from the tables used before version 1.0.3 ({prefix}SW_*).
+	 *
+	 * Runs only when the old items table exists and the new one is empty, so it
+	 * never overwrites data. Maps, galleries, memberships, and the data-retention
+	 * setting are copied with their IDs, so existing shortcodes keep working, and
+	 * the old tables are then dropped. Copying instead of renaming works on every
+	 * database WordPress supports, including SQLite.
+	 *
+	 * @return bool False if a query failed. The copied rows are then removed and the
+	 *              old tables kept, so the import is retried on the next load.
+	 */
+	private static function import_legacy_tables() {
+		global $wpdb;
+		$old_items = self::table( 'items', self::LEGACY_TABLE_PREFIX );
+		$items     = self::table( 'items' );
+		if ( ! self::table_exists( $old_items ) || null !== $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i LIMIT 1', $items ) ) ) {
+			return true;
+		}
+		// Bring the old tables up to the current schema so the column lists match.
+		self::create_tables( self::LEGACY_TABLE_PREFIX );
+		$old_settings  = self::table( 'settings', self::LEGACY_TABLE_PREFIX );
+		$old_relations = self::table( 'gallery_items', self::LEGACY_TABLE_PREFIX );
+		$relations     = self::table( 'gallery_items' );
+		// Version 1.0.0 stored one gallery per map in items.gallery_id.
+		$copied = ! $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $old_items, 'gallery_id' ) ) ||
+			false !== $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO %i (gallery_id, item_id) SELECT m.gallery_id, m.id FROM %i m INNER JOIN %i g ON g.id = m.gallery_id AND g.type = 'gallery' WHERE m.type <> 'gallery'", $old_relations, $old_items, $old_items ) );
+		$copied = $copied &&
+			false !== $wpdb->query( $wpdb->prepare( 'INSERT INTO %i (id, type, title, description, url, show_title, show_description, member_title, member_description, fill_factor, inherit_theme, background, color, width, height) SELECT id, type, title, description, url, show_title, show_description, member_title, member_description, fill_factor, inherit_theme, background, color, width, height FROM %i', $items, $old_items ) ) &&
+			false !== $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO %i (gallery_id, item_id) SELECT gallery_id, item_id FROM %i', $relations, $old_relations ) ) &&
+			$wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $items ) ) === $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $old_items ) );
+		$retention = $copied ? $wpdb->get_var( $wpdb->prepare( 'SELECT setting_value FROM %i WHERE setting_key = %s', $old_settings, 'delete_on_deactivation' ) ) : null;
+		if ( null !== $retention ) {
+			$copied = false !== $wpdb->replace( self::table( 'settings' ), array( 'setting_key' => 'delete_on_deactivation', 'setting_value' => '1' === $retention ? '1' : '0' ) );
+		}
+		if ( ! $copied ) {
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $relations ) );
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $items ) );
+			return false;
+		}
+		foreach ( array( $old_relations, $old_items, $old_settings ) as $table ) {
+			// The data now lives in the new tables.
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
+		}
+		return true;
+	}
+
+	/**
+	 * Creates or upgrades the plugin tables and records the schema version.
+	 *
+	 * Also adds the default data-retention setting and imports data from the
+	 * tables used before version 1.0.3. The version is not recorded if the import
+	 * fails, so it is retried on the next load.
+	 *
+	 * @return void
+	 */
+	private static function install() {
+		global $wpdb;
+		self::create_tables( self::TABLE_PREFIX );
+		$settings = self::table( 'settings' );
 		$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO %i (setting_key, setting_value) VALUES ('delete_on_deactivation', '0')", $settings ) );
-		// Version 1.0.0 stored one group per map in items.gallery_id.
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $items, 'gallery_id' ) ) &&
-			false === $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO %i (gallery_id, item_id) SELECT m.gallery_id, m.id FROM %i m INNER JOIN %i g ON g.id = m.gallery_id AND g.type = 'gallery' WHERE m.type <> 'gallery'", $relations, $items, $items ) ) ) {
+		if ( ! self::import_legacy_tables() ) {
 			return;
 		}
 		$wpdb->replace( $settings, array( 'setting_key' => 'db_version', 'setting_value' => self::DB_VERSION ) );
@@ -214,13 +293,14 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	public static function menu() {
-		add_menu_page( 'Gallery for SpotWalla', 'Gallery for SpotWalla', 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+		add_menu_page( __( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ), __( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ), 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
 	}
 
 	/**
 	 * Warns administrators while the pre-1.0.2 "SpotWalla Gallery" plugin is still active.
 	 *
-	 * Both plugins share the same tables, so the old copy should be removed. The
+	 * Since 1.0.3 this plugin moves the data into its own SpotGal_* tables, so
+	 * changes made in the old copy are no longer shown. The
 	 * notice appears only on the Plugins screen and this plugin's admin page.
 	 *
 	 * @return void
@@ -231,7 +311,7 @@ final class Gallery_For_SpotWalla {
 			! in_array( $screen->id, array( 'plugins', 'toplevel_page_' . self::SLUG ), true ) ) {
 			return;
 		}
-		echo '<div class="notice notice-warning"><p>' . esc_html__( 'The old "SpotWalla Gallery" plugin is still active. Gallery for SpotWalla replaces it and already uses its maps and galleries. Make sure "Permanently delete all plugin tables" is unchecked, then deactivate and delete "SpotWalla Gallery".', 'gallery-for-spotwalla' ) . '</p></div>';
+		echo '<div class="notice notice-warning"><p>' . esc_html__( 'The old "SpotWalla Gallery" plugin is still active. Gallery for SpotWalla replaces it and has moved its maps and galleries into its own tables, so changes made in the old plugin are no longer shown. Deactivate and delete "SpotWalla Gallery".', 'gallery-for-spotwalla' ) . '</p></div>';
 	}
 
 	/**
@@ -503,7 +583,11 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	private static function override_select( $name, $label, $value ) {
-		$labels = array( 'item' => "Use each map's setting", 'show' => 'Show for all maps', 'hide' => 'Hide for all maps' );
+		$labels = array(
+			'item' => __( "Use each map's setting", 'gallery-for-spotwalla' ),
+			'show' => __( 'Show for all maps', 'gallery-for-spotwalla' ),
+			'hide' => __( 'Hide for all maps', 'gallery-for-spotwalla' ),
+		);
 		?>
 		<tr><th><label for="sw-<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-<?php echo esc_attr( $name ); ?>" name="<?php echo esc_attr( $name ); ?>">
 			<?php foreach ( $labels as $key => $text ) : ?>
@@ -522,15 +606,48 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	private static function fill_select( $value, $is_gallery ) {
-		$label = $is_gallery ? 'Map density in this gallery' : 'Density/Fill percentage';
+		$label = $is_gallery ? __( 'Map density in this gallery', 'gallery-for-spotwalla' ) : __( 'Density/Fill percentage', 'gallery-for-spotwalla' );
 		?>
 		<tr><th><label for="sw-fill-factor"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-fill-factor" name="fill_factor">
-			<option value="" <?php selected( $value, '' ); ?>><?php echo esc_html( $is_gallery ? "Use each map's setting" : 'SpotWalla trip setting' ); ?></option>
+			<option value="" <?php selected( $value, '' ); ?>><?php echo esc_html( $is_gallery ? __( "Use each map's setting", 'gallery-for-spotwalla' ) : __( 'SpotWalla trip setting', 'gallery-for-spotwalla' ) ); ?></option>
 			<?php foreach ( self::FILL_FACTORS as $key => $text ) : ?>
+				<?php
+				if ( '0' === (string) $key ) {
+					$text = __( 'None', 'gallery-for-spotwalla' );
+				} elseif ( '100' === (string) $key ) {
+					/* translators: %s: the percentage "100%". */
+					$text = sprintf( __( 'All (%s)', 'gallery-for-spotwalla' ), '100%' );
+				}
+				?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( (string) $value, (string) $key ); ?>><?php echo esc_html( $text ); ?></option>
 			<?php endforeach; ?>
-		</select><p class="description"><?php echo esc_html( $is_gallery ? 'Overrides the density of every trip map shown in this gallery.' : 'Sets SpotWalla\'s Density/Fill Percentage (number of locations shown). Applies to trips only.' ); ?></p></td></tr>
+		</select><p class="description"><?php echo esc_html( $is_gallery ? __( 'Overrides the density of every trip map shown in this gallery.', 'gallery-for-spotwalla' ) : __( "Sets SpotWalla's Density/Fill Percentage (number of locations shown). Applies to trips only.", 'gallery-for-spotwalla' ) ); ?></p></td></tr>
 		<?php
+	}
+
+	/**
+	 * Returns the translated label for an item type.
+	 *
+	 * @param string $type Item type: track, trip, retrospective, or gallery.
+	 * @return string
+	 */
+	private static function type_label( $type ) {
+		$labels = array(
+			'track'         => __( 'Track', 'gallery-for-spotwalla' ),
+			'trip'          => __( 'Trip', 'gallery-for-spotwalla' ),
+			'retrospective' => __( 'Retrospective', 'gallery-for-spotwalla' ),
+			'gallery'       => __( 'Gallery', 'gallery-for-spotwalla' ),
+		);
+		return isset( $labels[ $type ] ) ? $labels[ $type ] : $type;
+	}
+
+	/**
+	 * Returns the " (opens in a new tab)" text for screen readers.
+	 *
+	 * @return string HTML.
+	 */
+	private static function new_tab_text() {
+		return '<span class="screen-reader-text"> ' . esc_html__( '(opens in a new tab)', 'gallery-for-spotwalla' ) . '</span>';
 	}
 
 	/**
@@ -540,9 +657,14 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	private static function nav( $tab ) {
+		$tabs = array(
+			'maps'      => __( 'Maps', 'gallery-for-spotwalla' ),
+			'galleries' => __( 'Galleries', 'gallery-for-spotwalla' ),
+			'about'     => __( 'About', 'gallery-for-spotwalla' ),
+		);
 		?>
-		<nav class="nav-tab-wrapper" aria-label="Gallery for SpotWalla sections">
-			<?php foreach ( array( 'maps' => 'Maps', 'galleries' => 'Galleries', 'about' => 'About' ) as $key => $label ) : ?>
+		<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Gallery for SpotWalla sections', 'gallery-for-spotwalla' ); ?>">
+			<?php foreach ( $tabs as $key => $label ) : ?>
 				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
 		</nav>
@@ -558,33 +680,55 @@ final class Gallery_For_SpotWalla {
 		global $wp_version;
 		$plugin  = get_file_data( __FILE__, array( 'version' => 'Version' ) );
 		$links   = array(
-			'Repository'                  => self::REPOSITORY,
-			'README'                      => self::REPOSITORY . '/blob/main/README.md',
-			'License (GPLv2 or later)'    => self::REPOSITORY . '/blob/main/LICENSE',
-			'SpotWalla terms and privacy' => 'https://spotwalla.com/tos',
+			__( 'Repository', 'gallery-for-spotwalla' )                  => self::REPOSITORY,
+			__( 'README', 'gallery-for-spotwalla' )                      => self::REPOSITORY . '/blob/main/README.md',
+			__( 'License (GPLv2 or later)', 'gallery-for-spotwalla' )    => self::REPOSITORY . '/blob/main/LICENSE',
+			__( 'SpotWalla terms and privacy', 'gallery-for-spotwalla' ) => 'https://spotwalla.com/tos',
 		);
-		$details = sprintf( 'Plugin %s, WordPress %s, PHP %s', $plugin['version'], $wp_version, PHP_VERSION );
+		/* translators: 1: plugin version, 2: WordPress version, 3: PHP version. */
+		$details = sprintf( __( 'Plugin %1$s, WordPress %2$s, PHP %3$s', 'gallery-for-spotwalla' ), $plugin['version'], $wp_version, PHP_VERSION );
+		$allowed = array(
+			'a'      => array( 'href' => array(), 'target' => array(), 'rel' => array() ),
+			'code'   => array(),
+			'span'   => array( 'class' => array() ),
+			'strong' => array(),
+		);
 		?>
 		<div class="wrap">
-			<h1>Gallery for SpotWalla</h1>
+			<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
 			<?php self::nav( 'about' ); ?>
-			<h2>About</h2>
-			<p>Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy.</p>
-			<div class="notice notice-info inline"><p><strong>Disclaimer:</strong> Gallery for SpotWalla is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla.</p></div>
+			<h2><?php esc_html_e( 'About', 'gallery-for-spotwalla' ); ?></h2>
+			<p><?php esc_html_e( "Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy.", 'gallery-for-spotwalla' ); ?></p>
+			<div class="notice notice-info inline"><p><?php echo wp_kses( __( '<strong>Disclaimer:</strong> Gallery for SpotWalla is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla.', 'gallery-for-spotwalla' ), $allowed ); ?></p></div>
 			<table class="form-table" role="presentation">
-				<tr><th>Version</th><td><?php echo esc_html( $plugin['version'] ); ?></td></tr>
+				<tr><th><?php esc_html_e( 'Version', 'gallery-for-spotwalla' ); ?></th><td><?php echo esc_html( $plugin['version'] ); ?></td></tr>
 				<?php foreach ( $links as $label => $url ) : ?>
-					<tr><th><?php echo esc_html( $label ); ?></th><td><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url ); ?><span class="screen-reader-text"> (opens in a new tab)</span></a></td></tr>
+					<tr><th><?php echo esc_html( $label ); ?></th><td><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url ) . wp_kses( self::new_tab_text(), $allowed ); ?></a></td></tr>
 				<?php endforeach; ?>
 			</table>
-			<p>The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder.</p>
-			<h2>Reporting issues</h2>
+			<p><?php echo wp_kses( __( "The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder.", 'gallery-for-spotwalla' ), $allowed ); ?></p>
+			<h2><?php esc_html_e( 'Reporting issues', 'gallery-for-spotwalla' ); ?></h2>
 			<ol>
-				<li>Search <a href="<?php echo esc_url( self::REPOSITORY . '/issues' ); ?>" target="_blank" rel="noopener noreferrer">existing issues<span class="screen-reader-text"> (opens in a new tab)</span></a> to see whether the problem is already reported.</li>
-				<li>If not, sign in to GitHub and <a href="<?php echo esc_url( self::REPOSITORY . '/issues/new' ); ?>" target="_blank" rel="noopener noreferrer">open a new issue<span class="screen-reader-text"> (opens in a new tab)</span></a> with a short, descriptive title.</li>
-				<li>Describe what you expected and what happened, the steps to reproduce it, the map type (trip, track, or retrospective), and any error messages or screenshots.</li>
-				<li>Include your environment: <code><?php echo esc_html( $details ); ?></code>.</li>
-				<li>Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue.</li>
+				<li>
+				<?php
+				/* translators: 1: link to the GitHub issue list, 2: "(opens in a new tab)" text for screen readers. */
+				echo wp_kses( sprintf( __( 'Search <a href="%1$s" target="_blank" rel="noopener noreferrer">existing issues%2$s</a> to see whether the problem is already reported.', 'gallery-for-spotwalla' ), esc_url( self::REPOSITORY . '/issues' ), self::new_tab_text() ), $allowed );
+				?>
+				</li>
+				<li>
+				<?php
+				/* translators: 1: link to the new GitHub issue form, 2: "(opens in a new tab)" text for screen readers. */
+				echo wp_kses( sprintf( __( 'If not, sign in to GitHub and <a href="%1$s" target="_blank" rel="noopener noreferrer">open a new issue%2$s</a> with a short, descriptive title.', 'gallery-for-spotwalla' ), esc_url( self::REPOSITORY . '/issues/new' ), self::new_tab_text() ), $allowed );
+				?>
+				</li>
+				<li><?php esc_html_e( 'Describe what you expected and what happened, the steps to reproduce it, the map type (trip, track, or retrospective), and any error messages or screenshots.', 'gallery-for-spotwalla' ); ?></li>
+				<li>
+				<?php
+				/* translators: %s: plugin, WordPress, and PHP versions. */
+				echo wp_kses( sprintf( __( 'Include your environment: %s.', 'gallery-for-spotwalla' ), '<code>' . esc_html( $details ) . '</code>' ), $allowed );
+				?>
+				</li>
+				<li><?php esc_html_e( 'Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue.', 'gallery-for-spotwalla' ); ?></li>
 			</ol>
 		</div>
 		<?php
@@ -638,89 +782,102 @@ final class Gallery_For_SpotWalla {
 		$defaults = array( 'id' => 0, 'type' => $is_gallery ? 'gallery' : 'trip', 'title' => '', 'description' => '', 'url' => '', 'show_title' => 1, 'show_description' => 1, 'member_title' => 'item', 'member_description' => 'item', 'fill_factor' => '', 'inherit_theme' => 1, 'background' => '#ffffff', 'color' => '#222222', 'width' => 800, 'height' => 450 );
 		$item     = $edit ?: $defaults;
 		$selected = $edit && ! $is_gallery ? self::gallery_ids_for( $edit['id'] ) : array();
-		$noun     = $is_gallery ? 'gallery' : 'map';
+		if ( $is_gallery ) {
+			$form_heading = $edit ? __( 'Edit gallery', 'gallery-for-spotwalla' ) : __( 'Add gallery', 'gallery-for-spotwalla' );
+			$save_label   = __( 'Save gallery', 'gallery-for-spotwalla' );
+		} else {
+			$form_heading = $edit ? __( 'Edit map', 'gallery-for-spotwalla' ) : __( 'Add map', 'gallery-for-spotwalla' );
+			$save_label   = __( 'Save map', 'gallery-for-spotwalla' );
+		}
 		$messages = array(
-			'saved'   => 'Saved.',
-			'deleted' => $is_gallery ? 'Deleted. Maps in a deleted gallery remain available individually.' : 'Deleted.',
-			'invalid' => 'Not saved. Supply a title (maximum 255 bytes), valid options and galleries, and an HTTPS SpotWalla public URL for maps. Existing types cannot be changed.',
-			'error'   => 'A database error occurred. Please try again.',
+			'saved'   => __( 'Saved.', 'gallery-for-spotwalla' ),
+			'deleted' => $is_gallery ? __( 'Deleted. Maps in a deleted gallery remain available individually.', 'gallery-for-spotwalla' ) : __( 'Deleted.', 'gallery-for-spotwalla' ),
+			'invalid' => __( 'Not saved. Supply a title (maximum 255 bytes), valid options and galleries, and an HTTPS SpotWalla public URL for maps. Existing types cannot be changed.', 'gallery-for-spotwalla' ),
+			'error'   => __( 'A database error occurred. Please try again.', 'gallery-for-spotwalla' ),
 		);
 		$base_url = admin_url( 'admin.php' );
 		?>
 		<div class="wrap">
-			<h1>Gallery for SpotWalla</h1>
+			<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
 			<?php self::nav( $tab ); ?>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
 				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
 			<?php endif; ?>
-			<p><?php echo esc_html( $is_gallery ? 'Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps\' title and description visibility.' : 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.' ); ?> Embed any map or gallery with <code>[gallery_for_spotwalla id="123"]</code>. Existing <code>[spotwalla_gallery]</code> shortcodes continue to work.</p>
-			<h2><?php echo esc_html( ( $edit ? 'Edit ' : 'Add ' ) . $noun ); ?></h2>
+			<p>
+			<?php
+			echo esc_html( $is_gallery ? __( "Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps' title and description visibility.", 'gallery-for-spotwalla' ) : __( 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.', 'gallery-for-spotwalla' ) );
+			echo ' ';
+			/* translators: 1: example shortcode, 2: shortcode name used by earlier versions. */
+			echo wp_kses( sprintf( __( 'Embed any map or gallery with %1$s. Existing %2$s shortcodes continue to work.', 'gallery-for-spotwalla' ), '<code>[gallery_for_spotwalla id="123"]</code>', '<code>[spotwalla_gallery]</code>' ), array( 'code' => array() ) );
+			?>
+			</p>
+			<h2><?php echo esc_html( $form_heading ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="gfsw_save">
 				<input type="hidden" name="id" value="<?php echo esc_attr( $item['id'] ); ?>">
 				<?php if ( $is_gallery ) : ?><input type="hidden" name="type" value="gallery"><?php endif; ?>
 				<?php wp_nonce_field( 'gfsw_save' ); ?>
 				<table class="form-table" role="presentation">
-					<tr><th><label for="sw-title">Title</label></th><td><input class="regular-text" id="sw-title" name="title" required maxlength="255" value="<?php echo esc_attr( $item['title'] ); ?>"></td></tr>
+					<tr><th><label for="sw-title"><?php esc_html_e( 'Title', 'gallery-for-spotwalla' ); ?></label></th><td><input class="regular-text" id="sw-title" name="title" required maxlength="255" value="<?php echo esc_attr( $item['title'] ); ?>"></td></tr>
 					<?php if ( ! $is_gallery ) : ?>
-						<tr><th><label for="sw-type">Type</label></th><td>
+						<tr><th><label for="sw-type"><?php esc_html_e( 'Type', 'gallery-for-spotwalla' ); ?></label></th><td>
 							<?php if ( $edit ) : ?>
 								<input type="hidden" name="type" value="<?php echo esc_attr( $item['type'] ); ?>">
-								<span><?php echo esc_html( ucfirst( $item['type'] ) ); ?></span>
+								<span><?php echo esc_html( self::type_label( $item['type'] ) ); ?></span>
 							<?php else : ?>
 								<select id="sw-type" name="type">
 									<?php foreach ( self::MAP_TYPES as $type ) : ?>
-										<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $item['type'], $type ); ?>><?php echo esc_html( ucfirst( $type ) ); ?></option>
+										<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $item['type'], $type ); ?>><?php echo esc_html( self::type_label( $type ) ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							<?php endif; ?>
 						</td></tr>
 					<?php endif; ?>
-					<tr><th><label for="sw-description">Description</label></th><td><textarea class="large-text" id="sw-description" name="description" rows="4"><?php
+					<tr><th><label for="sw-description"><?php esc_html_e( 'Description', 'gallery-for-spotwalla' ); ?></label></th><td><textarea class="large-text" id="sw-description" name="description" rows="4"><?php
 						// WordPress esc_textarea() escapes output for this textarea context.
 						// nosemgrep: php.lang.security.injection.echoed-request.echoed-request
 						echo esc_textarea( $item['description'] );
 					?></textarea></td></tr>
 					<?php if ( $is_gallery ) : ?>
-						<?php self::override_select( 'member_title', 'Map titles in this gallery', $item['member_title'] ); ?>
-						<?php self::override_select( 'member_description', 'Map descriptions in this gallery', $item['member_description'] ); ?>
+						<?php self::override_select( 'member_title', __( 'Map titles in this gallery', 'gallery-for-spotwalla' ), $item['member_title'] ); ?>
+						<?php self::override_select( 'member_description', __( 'Map descriptions in this gallery', 'gallery-for-spotwalla' ), $item['member_description'] ); ?>
 						<?php self::fill_select( $item['fill_factor'], true ); ?>
 					<?php else : ?>
-						<tr><th><label for="sw-url">Public SpotWalla URL</label></th><td><input type="url" class="large-text" id="sw-url" name="url" required value="<?php echo esc_attr( $item['url'] ); ?>"><p class="description">Use the HTTPS public or embed link supplied by SpotWalla.</p></td></tr>
-						<tr><th>Visibility</th><td><fieldset><legend class="screen-reader-text">Visibility</legend>
-							<label><input type="checkbox" name="show_title" value="1" <?php checked( $item['show_title'], 1 ); ?>> Show title</label><br>
-							<label><input type="checkbox" name="show_description" value="1" <?php checked( $item['show_description'], 1 ); ?>> Show description</label>
-							<p class="description">A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla.</p>
+						<tr><th><label for="sw-url"><?php esc_html_e( 'Public SpotWalla URL', 'gallery-for-spotwalla' ); ?></label></th><td><input type="url" class="large-text" id="sw-url" name="url" required value="<?php echo esc_attr( $item['url'] ); ?>"><p class="description"><?php esc_html_e( 'Use the HTTPS public or embed link supplied by SpotWalla.', 'gallery-for-spotwalla' ); ?></p></td></tr>
+						<tr><th><?php esc_html_e( 'Visibility', 'gallery-for-spotwalla' ); ?></th><td><fieldset><legend class="screen-reader-text"><?php esc_html_e( 'Visibility', 'gallery-for-spotwalla' ); ?></legend>
+							<label><input type="checkbox" name="show_title" value="1" <?php checked( $item['show_title'], 1 ); ?>> <?php esc_html_e( 'Show title', 'gallery-for-spotwalla' ); ?></label><br>
+							<label><input type="checkbox" name="show_description" value="1" <?php checked( $item['show_description'], 1 ); ?>> <?php esc_html_e( 'Show description', 'gallery-for-spotwalla' ); ?></label>
+							<p class="description"><?php esc_html_e( 'A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla.', 'gallery-for-spotwalla' ); ?></p>
 						</fieldset></td></tr>
 						<?php self::fill_select( $item['fill_factor'], false ); ?>
-						<tr><th>Galleries</th><td><fieldset><legend class="screen-reader-text">Galleries</legend>
+						<tr><th><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></th><td><fieldset><legend class="screen-reader-text"><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></legend>
 							<?php foreach ( $galleries as $gallery ) : ?>
 								<label><input type="checkbox" name="gallery_ids[]" value="<?php echo esc_attr( $gallery['id'] ); ?>" <?php checked( in_array( (int) $gallery['id'], $selected, true ) ); ?>> <?php echo esc_html( $gallery['title'] . ' (#' . $gallery['id'] . ')' ); ?></label><br>
 							<?php endforeach; ?>
 							<?php if ( ! $galleries ) : ?>
-								<p class="description">No galleries yet. <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => 'galleries' ), $base_url ) ); ?>">Create one on the Galleries tab.</a></p>
+								<p class="description"><?php esc_html_e( 'No galleries yet.', 'gallery-for-spotwalla' ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => 'galleries' ), $base_url ) ); ?>"><?php esc_html_e( 'Create one on the Galleries tab.', 'gallery-for-spotwalla' ); ?></a></p>
 							<?php else : ?>
-								<p class="description">Select any number of galleries. Galleries cannot be nested.</p>
+								<p class="description"><?php esc_html_e( 'Select any number of galleries. Galleries cannot be nested.', 'gallery-for-spotwalla' ); ?></p>
 							<?php endif; ?>
 						</fieldset></td></tr>
 					<?php endif; ?>
-					<tr><th>Description appearance</th><td><label><input type="checkbox" name="inherit_theme" value="1" <?php checked( $item['inherit_theme'], 1 ); ?>> Inherit site theme (ignore custom colors and dimensions)</label></td></tr>
-					<tr><th><label for="sw-background">Description background color</label></th><td><input type="color" id="sw-background" name="background" value="<?php echo esc_attr( $item['background'] ); ?>"></td></tr>
-					<tr><th><label for="sw-color">Description text and link color</label></th><td><input type="color" id="sw-color" name="color" value="<?php echo esc_attr( $item['color'] ); ?>"></td></tr>
-					<tr><th>Custom map dimensions</th><td>
-						<label for="sw-width">Width (px)</label> <input type="number" id="sw-width" name="width" min="200" max="2400" value="<?php echo esc_attr( $item['width'] ); ?>">
+					<tr><th><?php esc_html_e( 'Description appearance', 'gallery-for-spotwalla' ); ?></th><td><label><input type="checkbox" name="inherit_theme" value="1" <?php checked( $item['inherit_theme'], 1 ); ?>> <?php esc_html_e( 'Inherit site theme (ignore custom colors and dimensions)', 'gallery-for-spotwalla' ); ?></label></td></tr>
+					<tr><th><label for="sw-background"><?php esc_html_e( 'Description background color', 'gallery-for-spotwalla' ); ?></label></th><td><input type="color" id="sw-background" name="background" value="<?php echo esc_attr( $item['background'] ); ?>"></td></tr>
+					<tr><th><label for="sw-color"><?php esc_html_e( 'Description text and link color', 'gallery-for-spotwalla' ); ?></label></th><td><input type="color" id="sw-color" name="color" value="<?php echo esc_attr( $item['color'] ); ?>"></td></tr>
+					<tr><th><?php esc_html_e( 'Custom map dimensions', 'gallery-for-spotwalla' ); ?></th><td>
+						<label for="sw-width"><?php esc_html_e( 'Width (px)', 'gallery-for-spotwalla' ); ?></label> <input type="number" id="sw-width" name="width" min="200" max="2400" value="<?php echo esc_attr( $item['width'] ); ?>">
 						<?php if ( ! $is_gallery ) : ?>
-							<label for="sw-height">Map height (px)</label> <input type="number" id="sw-height" name="height" min="200" max="2400" value="<?php echo esc_attr( $item['height'] ); ?>">
+							<label for="sw-height"><?php esc_html_e( 'Map height (px)', 'gallery-for-spotwalla' ); ?></label> <input type="number" id="sw-height" name="height" min="200" max="2400" value="<?php echo esc_attr( $item['height'] ); ?>">
 						<?php endif; ?>
-						<p class="description">Widths shrink to fit small screens. Colors apply to the card, not the remote map.</p>
+						<p class="description"><?php esc_html_e( 'Widths shrink to fit small screens. Colors apply to the card, not the remote map.', 'gallery-for-spotwalla' ); ?></p>
 					</td></tr>
 				</table>
-				<?php submit_button( 'Save ' . $noun ); ?>
-				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab ), $base_url ) ); ?>">Cancel editing</a><?php endif; ?>
+				<?php submit_button( $save_label ); ?>
+				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab ), $base_url ) ); ?>"><?php esc_html_e( 'Cancel editing', 'gallery-for-spotwalla' ); ?></a><?php endif; ?>
 			</form>
-			<h2><?php echo esc_html( $is_gallery ? 'Galleries' : 'Maps' ); ?></h2>
+			<h2><?php echo esc_html( $is_gallery ? __( 'Galleries', 'gallery-for-spotwalla' ) : __( 'Maps', 'gallery-for-spotwalla' ) ); ?></h2>
 			<table class="widefat striped">
-				<thead><tr><th>ID</th><th>Title</th><?php if ( ! $is_gallery ) : ?><th>Type</th><?php endif; ?><th><?php echo esc_html( $is_gallery ? 'Maps' : 'Gallery IDs' ); ?></th><th>Shortcode</th><th>Actions</th></tr></thead>
+				<thead><tr><th><?php esc_html_e( 'ID', 'gallery-for-spotwalla' ); ?></th><th><?php esc_html_e( 'Title', 'gallery-for-spotwalla' ); ?></th><?php if ( ! $is_gallery ) : ?><th><?php esc_html_e( 'Type', 'gallery-for-spotwalla' ); ?></th><?php endif; ?><th><?php echo esc_html( $is_gallery ? __( 'Maps', 'gallery-for-spotwalla' ) : __( 'Gallery IDs', 'gallery-for-spotwalla' ) ); ?></th><th><?php esc_html_e( 'Shortcode', 'gallery-for-spotwalla' ); ?></th><th><?php esc_html_e( 'Actions', 'gallery-for-spotwalla' ); ?></th></tr></thead>
 				<tbody>
 				<?php foreach ( $rows as $row ) : ?>
 					<tr>
@@ -728,30 +885,30 @@ final class Gallery_For_SpotWalla {
 						<?php if ( $is_gallery ) : ?>
 							<td><?php echo esc_html( isset( $counts[ $row['id'] ] ) ? $counts[ $row['id'] ] : 0 ); ?></td>
 						<?php else : ?>
-							<td><?php echo esc_html( $row['type'] ); ?></td><td><?php echo esc_html( isset( $by_item[ $row['id'] ] ) ? implode( ', ', $by_item[ $row['id'] ] ) : '—' ); ?></td>
+							<td><?php echo esc_html( self::type_label( $row['type'] ) ); ?></td><td><?php echo esc_html( isset( $by_item[ $row['id'] ] ) ? implode( ', ', $by_item[ $row['id'] ] ) : '—' ); ?></td>
 						<?php endif; ?>
 						<td><code><?php echo esc_html( '[gallery_for_spotwalla id="' . $row['id'] . '"]' ); ?></code></td>
 						<td>
-							<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'edit' => $row['id'] ), $base_url ) ); ?>">Edit</a>
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'edit' => $row['id'] ), $base_url ) ); ?>"><?php esc_html_e( 'Edit', 'gallery-for-spotwalla' ); ?></a>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 								<input type="hidden" name="action" value="gfsw_delete"><input type="hidden" name="id" value="<?php echo esc_attr( $row['id'] ); ?>">
 								<?php wp_nonce_field( 'gfsw_delete_' . $row['id'] ); ?>
-								<button class="button-link-delete" type="submit">Delete</button>
+								<button class="button-link-delete" type="submit"><?php esc_html_e( 'Delete', 'gallery-for-spotwalla' ); ?></button>
 							</form>
 						</td>
 					</tr>
 				<?php endforeach; ?>
-				<?php if ( ! $rows ) : ?><tr><td colspan="<?php echo esc_attr( $is_gallery ? 5 : 6 ); ?>"><?php echo esc_html( $is_gallery ? 'No galleries yet.' : 'No maps yet.' ); ?></td></tr><?php endif; ?>
+				<?php if ( ! $rows ) : ?><tr><td colspan="<?php echo esc_attr( $is_gallery ? 5 : 6 ); ?>"><?php echo esc_html( $is_gallery ? __( 'No galleries yet.', 'gallery-for-spotwalla' ) : __( 'No maps yet.', 'gallery-for-spotwalla' ) ); ?></td></tr><?php endif; ?>
 				</tbody>
 			</table>
-			<h2>Data retention</h2>
+			<h2><?php esc_html_e( 'Data retention', 'gallery-for-spotwalla' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="gfsw_settings">
 				<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ); ?>">
 				<?php wp_nonce_field( 'gfsw_settings' ); ?>
-				<label><input type="checkbox" name="delete_on_deactivation" value="1" <?php checked( self::setting( 'delete_on_deactivation' ), '1' ); ?>> Permanently delete all plugin tables, settings, maps, and galleries on deactivation.</label>
-				<p>Unchecked by default: retain data for reactivation. Deletion cannot be undone; embedded shortcodes will have no content.</p>
-				<?php submit_button( 'Save retention setting' ); ?>
+				<label><input type="checkbox" name="delete_on_deactivation" value="1" <?php checked( self::setting( 'delete_on_deactivation' ), '1' ); ?>> <?php esc_html_e( 'Permanently delete all plugin tables, settings, maps, and galleries on deactivation.', 'gallery-for-spotwalla' ); ?></label>
+				<p><?php esc_html_e( 'Unchecked by default: retain data for reactivation. Deletion cannot be undone; embedded shortcodes will have no content.', 'gallery-for-spotwalla' ); ?></p>
+								<?php submit_button( __( 'Save retention setting', 'gallery-for-spotwalla' ) ); ?>
 			</form>
 		</div>
 		<?php

@@ -21,6 +21,7 @@ class BuildReleaseTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         for name in release.FILES:
             content = "<?php\n/**\n * Version: 1.2.3\n */\n" if name.endswith(".php") else name
+            (self.root / name).parent.mkdir(parents=True, exist_ok=True)
             (self.root / name).write_text(content, encoding="utf-8")
         self.patch = patch.object(release, "ROOT", self.root)
         self.patch.start()

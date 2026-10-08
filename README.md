@@ -12,7 +12,7 @@ Before version 1.0.2 this plugin was named **SpotWalla Gallery** (`spotwalla-gal
 2. Activate **Gallery for SpotWalla** in WordPress **Plugins**.
 3. Open **Gallery for SpotWalla** in the administrator menu.
 
-**Upgrading from SpotWalla Gallery 1.0.0 or 1.0.1:** because the plugin folder changed, WordPress installs 1.0.2 as a separate plugin. Your maps and galleries stay in the same database tables. Make sure **Permanently delete all plugin tables...** under **Data retention** is unchecked, deactivate and delete **SpotWalla Gallery**, then install and activate **Gallery for SpotWalla**. A warning is shown while the old plugin is still active.
+**Upgrading from SpotWalla Gallery 1.0.0 or 1.0.1:** because the plugin folder changed, WordPress installs Gallery for SpotWalla as a separate plugin. Install and activate **Gallery for SpotWalla** first; it copies your maps and galleries (keeping their IDs, so existing shortcodes keep working) into its own tables. Then deactivate and delete **SpotWalla Gallery**. A warning is shown while the old plugin is still active. Back up before upgrading.
 
 The plugin supports individual WordPress sites. On multisite, activate and manage it separately on each site; network activation is not supported.
 
@@ -62,11 +62,15 @@ SpotWalla controls whether a URL can be embedded. If the remote page is unavaila
 
 ## Storage and deactivation
 
-Activation creates three custom tables using the site's WordPress database prefix: `{prefix}SW_items`, `{prefix}SW_settings`, and `{prefix}SW_gallery_items`. All plugin configuration and content are stored there, not in WordPress posts or options.
+Activation creates three custom tables using the site's WordPress database prefix: `{prefix}SpotGal_items`, `{prefix}SpotGal_settings`, and `{prefix}SpotGal_gallery_items`. All plugin configuration and content are stored there, not in WordPress posts or options.
 
-Updating from 1.0.0 or 1.0.1 automatically upgrades the tables (adding the density setting) and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
+Versions before 1.0.3 used `{prefix}SW_*` tables. When the plugin is updated or activated, it copies the maps, galleries, gallery memberships, and data-retention setting from those tables into the `SpotGal_*` tables, keeping the same IDs, and then drops the old tables. This runs only while the new items table is empty, so it never overwrites data. Data from 1.0.0 is upgraded at the same time (adding the newer settings and converting each map's single group into a gallery membership). Back up before updating.
 
 By default, deactivation retains all tables for reactivation. In **Data retention**, check and save **Permanently delete all plugin tables, settings, maps, and galleries on deactivation** to opt into irreversible deletion. Back up first. Reactivation after deletion creates an empty gallery. Deleting plugin files after a retaining deactivation leaves the data in the database.
+
+## Translations
+
+All admin text uses the `gallery-for-spotwalla` text domain. The translation template is `languages/gallery-for-spotwalla.pot`. Once the plugin is on WordPress.org, translations can be contributed at [translate.wordpress.org](https://translate.wordpress.org/) and WordPress downloads them automatically. For a local translation, create `gallery-for-spotwalla-{locale}.po`/`.mo` files from the template (for example with Poedit) and place them in `wp-content/languages/plugins/`. After changing any text, regenerate the template with `wp i18n make-pot . languages/gallery-for-spotwalla.pot --include=gallery-for-spotwalla.php`.
 
 ## Validation
 
@@ -74,11 +78,11 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitting to WordPress.org, run the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin (`wp plugin check gallery-for-spotwalla`); it should report no errors. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitting to WordPress.org, run the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin (`wp plugin check gallery-for-spotwalla`); it should report no errors. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrades from 1.0.0 and 1.0.2 (data moves from the `SW_*` to the `SpotGal_*` tables with the same IDs), check that every admin string is translatable, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 
-Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, `readme.txt` (the WordPress.org readme), `README.md`, and the license inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
+Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, `readme.txt` (the WordPress.org readme), `README.md`, the license, and the translation template (`languages/gallery-for-spotwalla.pot`) inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
 
 To publish, update the plugin's `Version:` header and the `Stable tag` in `readme.txt`, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
 
