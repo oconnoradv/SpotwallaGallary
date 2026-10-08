@@ -4,7 +4,7 @@ A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and galle
 
 ## Installation
 
-1. Copy this repository into `wp-content/plugins/spotwalla-gallery/`.
+1. Download `spotwalla-gallery-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/spotwalla-gallery/`.
 2. Activate **SpotWalla Gallery** in WordPress **Plugins**.
 3. Open **SpotWalla Gallery** in the administrator menu.
 
@@ -38,4 +38,16 @@ By default, deactivation retains both tables for reactivation. In **Data retenti
 
 ## Validation
 
-There is no existing automated test suite or build process. Check PHP syntax with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, create and edit each entry type and a group, embed their IDs in a page, check theme/custom styling and narrow-screen widths, delete a group, and verify both data-retaining and data-deleting deactivations.
+The **Security checks and ZIP release** GitHub Actions workflow runs on pull requests, pushes to `main`, `v*` tags, weekly, and manually. It checks PHP syntax on PHP 7.4 and 8.5, scans PHP source with Semgrep's `p/php` rules, and uses Trivy for known CVEs, secrets, and configuration problems. Trivy uses an automatically updated advisory database, including NIST's National Vulnerability Database (NVD); vendor advisories and severities take precedence where available. No NVD API key is required. HIGH/CRITICAL Trivy findings (including unfixed vulnerabilities), Semgrep findings, and scanner errors block packaging and publication. JSON reports are retained as workflow artifacts for 14 days, including on scan failures.
+
+These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
+
+Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, create and edit each entry type and a group, embed their IDs in a page, check theme/custom styling and narrow-screen widths, delete a group, and verify both data-retaining and data-deleting deactivations.
+
+## Building and publishing releases
+
+Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, README, and license inside a single `spotwalla-gallery/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
+
+To publish, update the plugin's `Version:` header, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
+
+The action revisions and scanner versions are pinned in the workflow; update them periodically. If adding runtime assets, update the packaging allowlist in `.github/scripts/build_release.py`.

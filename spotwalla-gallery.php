@@ -215,7 +215,11 @@ final class SW_Gallery {
 							</select>
 						<?php endif; ?>
 					</td></tr>
-					<tr><th><label for="sw-description">Description</label></th><td><textarea class="large-text" id="sw-description" name="description" rows="4"><?php echo esc_textarea( $item['description'] ); ?></textarea></td></tr>
+					<tr><th><label for="sw-description">Description</label></th><td><textarea class="large-text" id="sw-description" name="description" rows="4"><?php
+						// WordPress esc_textarea() escapes output for this textarea context.
+						// nosemgrep: php.lang.security.injection.echoed-request.echoed-request
+						echo esc_textarea( $item['description'] );
+					?></textarea></td></tr>
 					<tr><th><label for="sw-url">Public SpotWalla URL</label></th><td><input type="url" class="large-text" id="sw-url" name="url" value="<?php echo esc_attr( $item['url'] ); ?>"><p class="description">Use the HTTPS public or embed link supplied by SpotWalla. Not needed for gallery groups.</p></td></tr>
 					<tr><th><label for="sw-group">Gallery group</label></th><td><select id="sw-group" name="gallery_id">
 						<option value="0">None</option>

@@ -1,0 +1,121 @@
+name: Security checks and ZIP release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  schedule:
+    - cron: '23 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.5']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - run: php -l spotwalla-gallery.php
+
+  security:
+    name: CVE, secrets, and PHP security
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6
+        with:
+          version: v0.75.0
+          cache: false
+      - name: Scan known vulnerabilities, secrets, and configuration
+        run: |
+          mkdir -p reports
+          trivy fs --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL --exit-code 1 \
+            --skip-dirs .git,reports,dist \
+            --format json --output reports/trivy.json .
+      - name: Install PHP static security scanner
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/semgrep"
+          "$RUNNER_TEMP/semgrep/bin/pip" install --disable-pip-version-check semgrep==1.180.0
+      - name: Scan PHP source
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          "$RUNNER_TEMP/semgrep/bin/semgrep" scan \
+            --config p/php --error --strict --metrics off \
+            --disable-version-check --json --output reports/semgrep.json \
+            spotwalla-gallery.php
+      - name: Retain security reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-reports
+          path: reports/*.json
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: Build installable plugin ZIP
+    needs: [php, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Package and verify ZIP
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: |
+          python3 -m unittest discover -s .github/tests
+          python3 .github/scripts/build_release.py --tag "$RELEASE_TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: spotwalla-gallery-package
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub release
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: spotwalla-gallery-package
+          path: dist
+      - name: Publish ZIP and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/* \
+            --verify-tag --title "SpotWalla Gallery $RELEASE_TAG" --generate-notes
