@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -276,6 +276,7 @@ final class Gallery_For_SpotWalla {
 	public static function init() {
 		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_styles' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'legacy_notice' ) );
 		add_action( 'admin_post_gfsw_save', array( __CLASS__, 'save' ) );
 		add_action( 'admin_post_gfsw_delete', array( __CLASS__, 'delete' ) );
@@ -288,12 +289,49 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Adds the Gallery for SpotWalla page to the admin menu.
+	 * Adds the plugin page to the admin menu as "Spotwalla Gallery".
 	 *
 	 * @return void
 	 */
 	public static function menu() {
-		add_menu_page( __( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ), __( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ), 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+		add_menu_page( __( 'Spotwalla Gallery', 'gallery-for-spotwalla' ), __( 'Spotwalla Gallery', 'gallery-for-spotwalla' ), 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+	}
+
+	/**
+	 * Adds admin CSS: a purple menu icon on every admin screen and the page header layout.
+	 *
+	 * @return void
+	 */
+	public static function admin_styles() {
+		$plugin = get_file_data( __FILE__, array( 'version' => 'Version' ) );
+		$menu   = '#adminmenu .toplevel_page_' . self::SLUG;
+		$css    = $menu . ' div.wp-menu-image:before,' . $menu . ':hover div.wp-menu-image:before,' . $menu . ' a:focus div.wp-menu-image:before,' . $menu . '.current div.wp-menu-image:before,' . $menu . '.wp-has-current-submenu div.wp-menu-image:before{color:#b48cf5}'
+			. '.gfsw-header{display:flex;align-items:center;gap:16px;margin:12px 0 8px}'
+			. '.gfsw-header img{flex:none;width:128px;height:128px;border-radius:4px}'
+			. '.wrap .gfsw-header h1{margin:0;padding:0;font-size:2em;line-height:1.2}'
+			. '.gfsw-header .gfsw-tagline{margin:4px 0 0;font-size:14px;font-style:italic;color:#646970}'
+			. '@media screen and (max-width:600px){.gfsw-header img{width:64px;height:64px}.wrap .gfsw-header h1{font-size:1.5em}}';
+		wp_register_style( 'gallery-for-spotwalla-admin', false, array(), $plugin['version'] );
+		wp_enqueue_style( 'gallery-for-spotwalla-admin' );
+		wp_add_inline_style( 'gallery-for-spotwalla-admin', $css );
+	}
+
+	/**
+	 * Outputs the page header: logo, "Spotwalla Gallery" title, and tagline.
+	 *
+	 * @return void
+	 */
+	private static function header() {
+		?>
+		<div class="gfsw-header">
+			<img src="<?php echo esc_url( plugins_url( 'images/logo-256x256.jpg', __FILE__ ) ); ?>" width="128" height="128" alt="" />
+			<div>
+				<h1><?php esc_html_e( 'Spotwalla Gallery', 'gallery-for-spotwalla' ); ?></h1>
+				<p class="gfsw-tagline"><?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?></p>
+			</div>
+		</div>
+		<hr class="wp-header-end" />
+		<?php
 	}
 
 	/**
@@ -663,7 +701,7 @@ final class Gallery_For_SpotWalla {
 			'about'     => __( 'About', 'gallery-for-spotwalla' ),
 		);
 		?>
-		<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Gallery for SpotWalla sections', 'gallery-for-spotwalla' ); ?>">
+		<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Spotwalla Gallery sections', 'gallery-for-spotwalla' ); ?>">
 			<?php foreach ( $tabs as $key => $label ) : ?>
 				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
@@ -695,7 +733,7 @@ final class Gallery_For_SpotWalla {
 		);
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
+			<?php self::header(); ?>
 			<?php self::nav( 'about' ); ?>
 			<h2><?php esc_html_e( 'About', 'gallery-for-spotwalla' ); ?></h2>
 			<p><?php esc_html_e( "Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy.", 'gallery-for-spotwalla' ); ?></p>
@@ -798,7 +836,7 @@ final class Gallery_For_SpotWalla {
 		$base_url = admin_url( 'admin.php' );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
+			<?php self::header(); ?>
 			<?php self::nav( $tab ); ?>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
 				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>

@@ -2,23 +2,20 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Gallery for SpotWalla 1.0.3\n"
+"Project-Id-Version: Gallery for SpotWalla 1.0.4\n"
 "Report-Msgid-Bugs-To: https://github.com/oconnoradv/SpotwallaGallary/issues\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-08T21:57:21+00:00\n"
+"POT-Creation-Date: 2026-10-08T22:28:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gallery-for-spotwalla\n"
 
 #. Plugin Name of the plugin
 #: gallery-for-spotwalla.php
-#: gallery-for-spotwalla.php:296
-#: gallery-for-spotwalla.php:698
-#: gallery-for-spotwalla.php:801
 msgid "Gallery for SpotWalla"
 msgstr ""
 
@@ -41,359 +38,368 @@ msgstr ""
 msgid "Please activate Gallery for SpotWalla separately on each site, not network-wide."
 msgstr ""
 
-#: gallery-for-spotwalla.php:314
+#: gallery-for-spotwalla.php:297
+#: gallery-for-spotwalla.php:329
+msgid "Spotwalla Gallery"
+msgstr ""
+
+#: gallery-for-spotwalla.php:330
+msgid "an O'ConnorADV project"
+msgstr ""
+
+#: gallery-for-spotwalla.php:352
 msgid "The old \"SpotWalla Gallery\" plugin is still active. Gallery for SpotWalla replaces it and has moved its maps and galleries into its own tables, so changes made in the old plugin are no longer shown. Deactivate and delete \"SpotWalla Gallery\"."
 msgstr ""
 
-#: gallery-for-spotwalla.php:325
+#: gallery-for-spotwalla.php:363
 msgid "You are not allowed to manage SpotWalla galleries."
 msgstr ""
 
-#: gallery-for-spotwalla.php:587
-#: gallery-for-spotwalla.php:612
+#: gallery-for-spotwalla.php:625
+#: gallery-for-spotwalla.php:650
 msgid "Use each map's setting"
 msgstr ""
 
-#: gallery-for-spotwalla.php:588
+#: gallery-for-spotwalla.php:626
 msgid "Show for all maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:589
+#: gallery-for-spotwalla.php:627
 msgid "Hide for all maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:609
+#: gallery-for-spotwalla.php:647
 msgid "Map density in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:609
+#: gallery-for-spotwalla.php:647
 msgid "Density/Fill percentage"
 msgstr ""
 
-#: gallery-for-spotwalla.php:612
+#: gallery-for-spotwalla.php:650
 msgid "SpotWalla trip setting"
 msgstr ""
 
-#: gallery-for-spotwalla.php:616
+#: gallery-for-spotwalla.php:654
 msgid "None"
 msgstr ""
 
 #. translators: %s: the percentage "100%".
-#: gallery-for-spotwalla.php:619
+#: gallery-for-spotwalla.php:657
 #, php-format
 msgid "All (%s)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:624
+#: gallery-for-spotwalla.php:662
 msgid "Overrides the density of every trip map shown in this gallery."
 msgstr ""
 
-#: gallery-for-spotwalla.php:624
+#: gallery-for-spotwalla.php:662
 msgid "Sets SpotWalla's Density/Fill Percentage (number of locations shown). Applies to trips only."
 msgstr ""
 
-#: gallery-for-spotwalla.php:636
+#: gallery-for-spotwalla.php:674
 msgid "Track"
 msgstr ""
 
-#: gallery-for-spotwalla.php:637
+#: gallery-for-spotwalla.php:675
 msgid "Trip"
 msgstr ""
 
-#: gallery-for-spotwalla.php:638
+#: gallery-for-spotwalla.php:676
 msgid "Retrospective"
 msgstr ""
 
-#: gallery-for-spotwalla.php:639
+#: gallery-for-spotwalla.php:677
 msgid "Gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:650
+#: gallery-for-spotwalla.php:688
 msgid "(opens in a new tab)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:661
-#: gallery-for-spotwalla.php:878
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:699
+#: gallery-for-spotwalla.php:916
+#: gallery-for-spotwalla.php:918
 msgid "Maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:662
-#: gallery-for-spotwalla.php:853
-#: gallery-for-spotwalla.php:878
+#: gallery-for-spotwalla.php:700
+#: gallery-for-spotwalla.php:891
+#: gallery-for-spotwalla.php:916
 msgid "Galleries"
 msgstr ""
 
-#: gallery-for-spotwalla.php:663
-#: gallery-for-spotwalla.php:700
+#: gallery-for-spotwalla.php:701
+#: gallery-for-spotwalla.php:738
 msgid "About"
 msgstr ""
 
-#: gallery-for-spotwalla.php:666
-msgid "Gallery for SpotWalla sections"
+#: gallery-for-spotwalla.php:704
+msgid "Spotwalla Gallery sections"
 msgstr ""
 
-#: gallery-for-spotwalla.php:683
+#: gallery-for-spotwalla.php:721
 msgid "Repository"
 msgstr ""
 
-#: gallery-for-spotwalla.php:684
+#: gallery-for-spotwalla.php:722
 msgid "README"
 msgstr ""
 
-#: gallery-for-spotwalla.php:685
+#: gallery-for-spotwalla.php:723
 msgid "License (GPLv2 or later)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:686
+#: gallery-for-spotwalla.php:724
 msgid "SpotWalla terms and privacy"
 msgstr ""
 
 #. translators: 1: plugin version, 2: WordPress version, 3: PHP version.
-#: gallery-for-spotwalla.php:689
+#: gallery-for-spotwalla.php:727
 #, php-format
 msgid "Plugin %1$s, WordPress %2$s, PHP %3$s"
 msgstr ""
 
-#: gallery-for-spotwalla.php:701
+#: gallery-for-spotwalla.php:739
 msgid "Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy."
 msgstr ""
 
-#: gallery-for-spotwalla.php:702
+#: gallery-for-spotwalla.php:740
 msgid "<strong>Disclaimer:</strong> Gallery for SpotWalla is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla."
 msgstr ""
 
-#: gallery-for-spotwalla.php:704
+#: gallery-for-spotwalla.php:742
 msgid "Version"
 msgstr ""
 
-#: gallery-for-spotwalla.php:709
+#: gallery-for-spotwalla.php:747
 msgid "The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder."
 msgstr ""
 
-#: gallery-for-spotwalla.php:710
+#: gallery-for-spotwalla.php:748
 msgid "Reporting issues"
 msgstr ""
 
 #. translators: 1: link to the GitHub issue list, 2: "(opens in a new tab)" text for screen readers.
-#: gallery-for-spotwalla.php:715
+#: gallery-for-spotwalla.php:753
 #, php-format
 msgid "Search <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">existing issues%2$s</a> to see whether the problem is already reported."
 msgstr ""
 
 #. translators: 1: link to the new GitHub issue form, 2: "(opens in a new tab)" text for screen readers.
-#: gallery-for-spotwalla.php:721
+#: gallery-for-spotwalla.php:759
 #, php-format
 msgid "If not, sign in to GitHub and <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">open a new issue%2$s</a> with a short, descriptive title."
 msgstr ""
 
-#: gallery-for-spotwalla.php:724
+#: gallery-for-spotwalla.php:762
 msgid "Describe what you expected and what happened, the steps to reproduce it, the map type (trip, track, or retrospective), and any error messages or screenshots."
 msgstr ""
 
 #. translators: %s: plugin, WordPress, and PHP versions.
-#: gallery-for-spotwalla.php:728
+#: gallery-for-spotwalla.php:766
 #, php-format
 msgid "Include your environment: %s."
 msgstr ""
 
-#: gallery-for-spotwalla.php:731
+#: gallery-for-spotwalla.php:769
 msgid "Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue."
 msgstr ""
 
-#: gallery-for-spotwalla.php:786
+#: gallery-for-spotwalla.php:824
 msgid "Edit gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:786
+#: gallery-for-spotwalla.php:824
 msgid "Add gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:787
+#: gallery-for-spotwalla.php:825
 msgid "Save gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:789
+#: gallery-for-spotwalla.php:827
 msgid "Edit map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:789
+#: gallery-for-spotwalla.php:827
 msgid "Add map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:790
+#: gallery-for-spotwalla.php:828
 msgid "Save map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:793
+#: gallery-for-spotwalla.php:831
 msgid "Saved."
 msgstr ""
 
-#: gallery-for-spotwalla.php:794
+#: gallery-for-spotwalla.php:832
 msgid "Deleted. Maps in a deleted gallery remain available individually."
 msgstr ""
 
-#: gallery-for-spotwalla.php:794
+#: gallery-for-spotwalla.php:832
 msgid "Deleted."
 msgstr ""
 
-#: gallery-for-spotwalla.php:795
+#: gallery-for-spotwalla.php:833
 msgid "Not saved. Supply a title (maximum 255 bytes), valid options and galleries, and an HTTPS SpotWalla public URL for maps. Existing types cannot be changed."
 msgstr ""
 
-#: gallery-for-spotwalla.php:796
+#: gallery-for-spotwalla.php:834
 msgid "A database error occurred. Please try again."
 msgstr ""
 
-#: gallery-for-spotwalla.php:808
+#: gallery-for-spotwalla.php:846
 msgid "Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps' title and description visibility."
 msgstr ""
 
-#: gallery-for-spotwalla.php:808
+#: gallery-for-spotwalla.php:846
 msgid "Add tracks, trips, and retrospectives, and assign each map to any number of galleries."
 msgstr ""
 
 #. translators: 1: example shortcode, 2: shortcode name used by earlier versions.
-#: gallery-for-spotwalla.php:811
+#: gallery-for-spotwalla.php:849
 #, php-format
 msgid "Embed any map or gallery with %1$s. Existing %2$s shortcodes continue to work."
 msgstr ""
 
-#: gallery-for-spotwalla.php:821
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:859
+#: gallery-for-spotwalla.php:918
 msgid "Title"
 msgstr ""
 
-#: gallery-for-spotwalla.php:823
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:861
+#: gallery-for-spotwalla.php:918
 msgid "Type"
 msgstr ""
 
-#: gallery-for-spotwalla.php:836
+#: gallery-for-spotwalla.php:874
 msgid "Description"
 msgstr ""
 
-#: gallery-for-spotwalla.php:842
+#: gallery-for-spotwalla.php:880
 msgid "Map titles in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:843
+#: gallery-for-spotwalla.php:881
 msgid "Map descriptions in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:846
+#: gallery-for-spotwalla.php:884
 msgid "Public SpotWalla URL"
 msgstr ""
 
-#: gallery-for-spotwalla.php:846
+#: gallery-for-spotwalla.php:884
 msgid "Use the HTTPS public or embed link supplied by SpotWalla."
 msgstr ""
 
-#: gallery-for-spotwalla.php:847
+#: gallery-for-spotwalla.php:885
 msgid "Visibility"
 msgstr ""
 
-#: gallery-for-spotwalla.php:848
+#: gallery-for-spotwalla.php:886
 msgid "Show title"
 msgstr ""
 
-#: gallery-for-spotwalla.php:849
+#: gallery-for-spotwalla.php:887
 msgid "Show description"
 msgstr ""
 
-#: gallery-for-spotwalla.php:850
+#: gallery-for-spotwalla.php:888
 msgid "A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla."
 msgstr ""
 
-#: gallery-for-spotwalla.php:858
-#: gallery-for-spotwalla.php:901
+#: gallery-for-spotwalla.php:896
+#: gallery-for-spotwalla.php:939
 msgid "No galleries yet."
 msgstr ""
 
-#: gallery-for-spotwalla.php:858
+#: gallery-for-spotwalla.php:896
 msgid "Create one on the Galleries tab."
 msgstr ""
 
-#: gallery-for-spotwalla.php:860
+#: gallery-for-spotwalla.php:898
 msgid "Select any number of galleries. Galleries cannot be nested."
 msgstr ""
 
-#: gallery-for-spotwalla.php:864
+#: gallery-for-spotwalla.php:902
 msgid "Description appearance"
 msgstr ""
 
-#: gallery-for-spotwalla.php:864
+#: gallery-for-spotwalla.php:902
 msgid "Inherit site theme (ignore custom colors and dimensions)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:865
+#: gallery-for-spotwalla.php:903
 msgid "Description background color"
 msgstr ""
 
-#: gallery-for-spotwalla.php:866
+#: gallery-for-spotwalla.php:904
 msgid "Description text and link color"
 msgstr ""
 
-#: gallery-for-spotwalla.php:867
+#: gallery-for-spotwalla.php:905
 msgid "Custom map dimensions"
 msgstr ""
 
-#: gallery-for-spotwalla.php:868
+#: gallery-for-spotwalla.php:906
 msgid "Width (px)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:870
+#: gallery-for-spotwalla.php:908
 msgid "Map height (px)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:872
+#: gallery-for-spotwalla.php:910
 msgid "Widths shrink to fit small screens. Colors apply to the card, not the remote map."
 msgstr ""
 
-#: gallery-for-spotwalla.php:876
+#: gallery-for-spotwalla.php:914
 msgid "Cancel editing"
 msgstr ""
 
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:918
 msgid "ID"
 msgstr ""
 
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:918
 msgid "Gallery IDs"
 msgstr ""
 
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:918
 msgid "Shortcode"
 msgstr ""
 
-#: gallery-for-spotwalla.php:880
+#: gallery-for-spotwalla.php:918
 msgid "Actions"
 msgstr ""
 
-#: gallery-for-spotwalla.php:892
+#: gallery-for-spotwalla.php:930
 msgid "Edit"
 msgstr ""
 
-#: gallery-for-spotwalla.php:896
+#: gallery-for-spotwalla.php:934
 msgid "Delete"
 msgstr ""
 
-#: gallery-for-spotwalla.php:901
+#: gallery-for-spotwalla.php:939
 msgid "No maps yet."
 msgstr ""
 
-#: gallery-for-spotwalla.php:904
+#: gallery-for-spotwalla.php:942
 msgid "Data retention"
 msgstr ""
 
-#: gallery-for-spotwalla.php:909
+#: gallery-for-spotwalla.php:947
 msgid "Permanently delete all plugin tables, settings, maps, and galleries on deactivation."
 msgstr ""
 
-#: gallery-for-spotwalla.php:910
+#: gallery-for-spotwalla.php:948
 msgid "Unchecked by default: retain data for reactivation. Deletion cannot be undone; embedded shortcodes will have no content."
 msgstr ""
 
-#: gallery-for-spotwalla.php:911
+#: gallery-for-spotwalla.php:949
 msgid "Save retention setting"
 msgstr ""

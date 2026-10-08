@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,7 +38,7 @@ This plugin embeds maps from SpotWalla (https://spotwalla.com), an online person
 == Installation ==
 
 1. Install and activate the plugin through **Plugins > Add New**, or upload the `gallery-for-spotwalla` folder to `/wp-content/plugins/`.
-2. Open **Gallery for SpotWalla** in the admin menu.
+2. Open **Spotwalla Gallery** in the admin menu.
 3. On the **Maps** tab, add the public HTTPS link of a SpotWalla trip, track, or retrospective.
 4. Optionally create galleries on the **Galleries** tab and assign maps to them.
 5. Add the shortcode shown in the list to any post or page.
@@ -65,6 +65,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
+= 1.0.4 =
+* The admin menu and page header now read "Spotwalla Gallery", and the page header shows the project logo and the tagline "an O'ConnorADV project".
+* The admin menu icon is now purple.
+
 = 1.0.3 =
 * The plugin's database tables are now named `{prefix}SpotGal_*`. Data in the old `{prefix}SW_*` tables is moved automatically, keeping the same IDs.
 * Translation-ready: all admin text uses the `gallery-for-spotwalla` text domain, and a translation template is included.
@@ -84,6 +88,9 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Updates the admin menu name, icon color, and page header. No data changes.
 
 = 1.0.3 =
 Moves your maps and galleries into renamed database tables (same IDs) and adds translation support. Back up before updating.
