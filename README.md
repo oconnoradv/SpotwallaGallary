@@ -1,12 +1,18 @@
-# SpotWalla Gallery
+# Gallery for SpotWalla
 
-A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and gallery groups. Requires WordPress 6.0+ and PHP 7.4+.
+A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and gallery groups. Requires WordPress 6.2+ and PHP 7.4+. Licensed under the GNU General Public License v2 or later (see [LICENSE](LICENSE)).
+
+Before version 1.0.2 this plugin was named **SpotWalla Gallery** (`spotwalla-gallery`). It was renamed to follow the WordPress.org rule that plugin names must not begin with another project's trademark.
+
+> **Disclaimer:** Gallery for SpotWalla is an independent project. It is **not** affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used only to describe compatibility. Report plugin problems to this repository, not to SpotWalla.
 
 ## Installation
 
-1. Download `spotwalla-gallery-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/spotwalla-gallery/`.
-2. Activate **SpotWalla Gallery** in WordPress **Plugins**.
-3. Open **SpotWalla Gallery** in the administrator menu.
+1. Download `gallery-for-spotwalla-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/gallery-for-spotwalla/`.
+2. Activate **Gallery for SpotWalla** in WordPress **Plugins**.
+3. Open **Gallery for SpotWalla** in the administrator menu.
+
+**Upgrading from SpotWalla Gallery 1.0.0 or 1.0.1:** because the plugin folder changed, WordPress installs 1.0.2 as a separate plugin. Your maps and galleries stay in the same database tables. Make sure **Permanently delete all plugin tables...** under **Data retention** is unchecked, deactivate and delete **SpotWalla Gallery**, then install and activate **Gallery for SpotWalla**. A warning is shown while the old plugin is still active.
 
 The plugin supports individual WordPress sites. On multisite, activate and manage it separately on each site; network activation is not supported.
 
@@ -18,25 +24,47 @@ To group maps, first create a gallery on the **Galleries** tab, then select one 
 
 Each map has **Show title** and **Show description** settings, both enabled by default. Displaying a map by its own ID always uses these settings. Within a gallery, the gallery's **Map titles** and **Map descriptions** options can use each map's setting (the default), or show or hide that element for all its maps. Hiding a title also hides its link to SpotWalla; the iframe retains the title for accessibility. Gallery titles and descriptions are always shown.
 
-**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's background/text/link colors, width, and map height (200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's cards, not the contents of SpotWalla's cross-origin maps.
+### Map density
+
+Each map has a **Density/Fill percentage** setting matching the SpotWalla trip viewer's **Trip Adjustments > Density/Fill Percentage** values: None, 0.1, 0.3, 0.5, 1, 3, 5, 10–90%, or All (100%). It controls how many locations SpotWalla draws. The default, **SpotWalla trip setting**, leaves the embed link unchanged so the trip's own configuration applies. Otherwise, the plugin adds SpotWalla's `fillFactor` parameter to the embedded map's URL.
+
+A gallery's **Map density in this gallery** option uses each map's setting by default, or applies one value to every trip map displayed in that gallery. Displaying a map by its own ID always uses the map's setting.
+
+Density applies to **trips** only. SpotWalla's retrospective viewer ignores it, and it is not applied to tracks or retrospectives.
+
+### Map layer and picture icons
+
+SpotWalla does not currently support setting the initial map layer (Streets, Terrain, Satellite, Satellite/Streets) or picture-icon visibility through the embed link; its viewer always starts on Streets with picture icons shown. Configure these in SpotWalla instead: set the trip's initial map type on the **Options** tab of the trip in SpotWalla's Trip Manager. Visitors can still change the layer and show/hide picture icons from the embedded map's controls. Because the map is a cross-origin iframe, the plugin cannot operate those controls.
+
+### Description appearance and map dimensions
+
+**Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's **Description background color**, **Description text and link color**, and **Custom map dimensions** (width and map height, 200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's title and description cards, not the contents of SpotWalla's cross-origin maps.
+
+The **About** tab shows the installed version, the disclaimer that this project is not affiliated with or approved by SpotWalla, and links to this repository, the README, and the license, with instructions for reporting issues.
+
+## Reporting issues
+
+Search [existing issues](https://github.com/oconnoradv/SpotwallaGallary/issues) first, then [open a new issue](https://github.com/oconnoradv/SpotwallaGallary/issues/new) with a descriptive title, the expected and actual behavior, steps to reproduce, the map type, any error messages or screenshots, and your plugin, WordPress, and PHP versions (shown on the **About** tab). Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue.
 
 ## Embedding in pages or posts
 
 Use a WordPress **Shortcode** block (or a classic editor shortcode):
 
 ```text
-[spotwalla_gallery id="123"]
+[gallery_for_spotwalla id="123"]
 ```
+
+Shortcodes from earlier versions, `[spotwalla_gallery id="123"]`, continue to work.
 
 Replace `123` with a map or gallery ID. A map renders its visible title/link, visible description, and lazy-loaded iframe; a gallery renders its maps in creation order, applying its visibility overrides. Missing or invalid IDs render nothing. The same shortcode can be used more than once on a page.
 
-SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link when it is shown. Loading maps sends requests to SpotWalla; account for this in your site's privacy policy and consent configuration.
+SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link when it is shown. Loading maps sends requests from visitors' browsers to SpotWalla (their IP address, browser information, and the map link; no referrer is sent), and SpotWalla may set cookies and use analytics. See SpotWalla's [Terms of Service and Privacy Policy](https://spotwalla.com/tos), and account for this in your site's privacy policy and consent configuration.
 
 ## Storage and deactivation
 
 Activation creates three custom tables using the site's WordPress database prefix: `{prefix}SW_items`, `{prefix}SW_settings`, and `{prefix}SW_gallery_items`. All plugin configuration and content are stored there, not in WordPress posts or options.
 
-Updating from 1.0.0 automatically upgrades the tables and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
+Updating from 1.0.0 or 1.0.1 automatically upgrades the tables (adding the density setting) and preserves each map's existing group as a gallery membership. Back up before updating. The legacy single-group column is retained but no longer used.
 
 By default, deactivation retains all tables for reactivation. In **Data retention**, check and save **Permanently delete all plugin tables, settings, maps, and galleries on deactivation** to opt into irreversible deletion. Back up first. Reactivation after deletion creates an empty gallery. Deleting plugin files after a retaining deactivation leaves the data in the database.
 
@@ -46,12 +74,12 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check both tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitting to WordPress.org, run the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin (`wp plugin check gallery-for-spotwalla`); it should report no errors. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 
-Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, README, and license inside a single `spotwalla-gallery/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
+Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, `readme.txt` (the WordPress.org readme), `README.md`, and the license inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
 
-To publish, update the plugin's `Version:` header, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
+To publish, update the plugin's `Version:` header and the `Stable tag` in `readme.txt`, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
 
 The action revisions and scanner versions are pinned in the workflow; update them periodically. If adding runtime assets, update the packaging allowlist in `.github/scripts/build_release.py`.

@@ -8,8 +8,8 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PLUGIN = "spotwalla-gallery"
-FILES = ("spotwalla-gallery.php", "README.md", "LICENSE")
+PLUGIN = "gallery-for-spotwalla"
+FILES = ("gallery-for-spotwalla.php", "readme.txt", "README.md", "LICENSE")
 
 
 def build(tag: str = "") -> Path:

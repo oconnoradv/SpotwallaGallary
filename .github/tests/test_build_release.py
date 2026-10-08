@@ -33,10 +33,10 @@ class BuildReleaseTests(unittest.TestCase):
         with ZipFile(archive) as package:
             self.assertEqual(
                 sorted(package.namelist()),
-                sorted(f"spotwalla-gallery/{name}" for name in release.FILES),
+                sorted(f"{release.PLUGIN}/{name}" for name in release.FILES),
             )
             for name in release.FILES:
-                self.assertEqual(package.read(f"spotwalla-gallery/{name}"), (self.root / name).read_bytes())
+                self.assertEqual(package.read(f"{release.PLUGIN}/{name}"), (self.root / name).read_bytes())
         self.assertEqual(
             archive.with_suffix(".zip.sha256").read_text(encoding="ascii"),
             f"{hashlib.sha256(original).hexdigest()}  {archive.name}\n",
@@ -50,10 +50,10 @@ class BuildReleaseTests(unittest.TestCase):
         self.assertFalse((self.root / "dist").exists())
 
     def test_missing_version_or_missing_file_fails(self):
-        (self.root / "spotwalla-gallery.php").write_text("<?php\n", encoding="utf-8")
+        (self.root / release.FILES[0]).write_text("<?php\n", encoding="utf-8")
         with self.assertRaises(ValueError):
             release.build()
-        (self.root / "spotwalla-gallery.php").write_text(" * Version: 1.2.3\n", encoding="utf-8")
+        (self.root / release.FILES[0]).write_text(" * Version: 1.2.3\n", encoding="utf-8")
         (self.root / "LICENSE").unlink()
         with self.assertRaises(FileNotFoundError):
             release.build()
