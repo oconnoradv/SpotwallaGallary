@@ -1,19 +1,30 @@
 <?php
 /**
- * Plugin Name: SpotWalla Gallery
- * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and gallery groups. Independent project; not affiliated with or approved by SpotWalla.
+ * Plugin Name: Gallery for SpotWalla
+ * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
+ * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
  * Version: 1.0.2
- * Requires at least: 6.0
+ * Requires at least: 6.2
  * Requires PHP: 7.4
- * License: MIT
- * Text Domain: spotwalla-gallery
+ * Author: Brian O'Connor
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: gallery-for-spotwalla
  */
+
+/*
+ * The plugin stores its data in its own tables, which the WordPress object cache and
+ * core APIs do not cover. Table names come from $wpdb->prefix and are passed to
+ * $wpdb->prepare() as %i identifiers.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned custom tables.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class SW_Gallery {
+final class Gallery_For_SpotWalla {
+	const SLUG         = 'gallery-for-spotwalla';
 	const DB_VERSION   = '3';
 	const REPOSITORY   = 'https://github.com/oconnoradv/SpotwallaGallary';
 	const MAP_TYPES    = array( 'track', 'trip', 'retrospective' );
@@ -28,7 +39,7 @@ final class SW_Gallery {
 
 	public static function activate( $network_wide = false ) {
 		if ( $network_wide ) {
-			wp_die( esc_html__( 'Please activate SpotWalla Gallery separately on each site, not network-wide.', 'spotwalla-gallery' ) );
+			wp_die( esc_html__( 'Please activate Gallery for SpotWalla separately on each site, not network-wide.', 'gallery-for-spotwalla' ) );
 		}
 		self::install();
 	}
@@ -75,20 +86,24 @@ final class SW_Gallery {
 				KEY item_id (item_id)
 			) $charset;"
 		);
-		$wpdb->query( "INSERT IGNORE INTO $settings (setting_key, setting_value) VALUES ('delete_on_deactivation', '0')" );
+		$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO %i (setting_key, setting_value) VALUES ('delete_on_deactivation', '0')", $settings ) );
 		// Version 1.0.0 stored one group per map in items.gallery_id.
-		if ( $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM $items LIKE %s", 'gallery_id' ) ) &&
-			false === $wpdb->query( "INSERT IGNORE INTO $relations (gallery_id, item_id) SELECT m.gallery_id, m.id FROM $items m INNER JOIN $items g ON g.id = m.gallery_id AND g.type = 'gallery' WHERE m.type <> 'gallery'" ) ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $items, 'gallery_id' ) ) &&
+			false === $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO %i (gallery_id, item_id) SELECT m.gallery_id, m.id FROM %i m INNER JOIN %i g ON g.id = m.gallery_id AND g.type = 'gallery' WHERE m.type <> 'gallery'", $relations, $items, $items ) ) ) {
 			return;
 		}
 		$wpdb->replace( $settings, array( 'setting_key' => 'db_version', 'setting_value' => self::DB_VERSION ) );
 	}
 
+	private static function setting( $key ) {
+		global $wpdb;
+		return $wpdb->get_var( $wpdb->prepare( 'SELECT setting_value FROM %i WHERE setting_key = %s', self::table( 'settings' ), $key ) );
+	}
+
 	public static function maybe_upgrade() {
 		global $wpdb;
-		$settings = self::table( 'settings' );
 		$suppress = $wpdb->suppress_errors();
-		$version  = $wpdb->get_var( "SELECT setting_value FROM $settings WHERE setting_key = 'db_version'" );
+		$version  = self::setting( 'db_version' );
 		$wpdb->suppress_errors( $suppress );
 		if ( null === $version || version_compare( $version, self::DB_VERSION, '<' ) ) {
 			self::install();
@@ -97,39 +112,57 @@ final class SW_Gallery {
 
 	public static function deactivate() {
 		global $wpdb;
-		$settings = self::table( 'settings' );
-		if ( '1' === $wpdb->get_var( "SELECT setting_value FROM $settings WHERE setting_key = 'delete_on_deactivation'" ) ) {
-			$wpdb->query( 'DROP TABLE IF EXISTS ' . self::table( 'gallery_items' ) );
-			$wpdb->query( 'DROP TABLE IF EXISTS ' . self::table( 'items' ) );
-			$wpdb->query( "DROP TABLE IF EXISTS $settings" );
+		if ( '1' === self::setting( 'delete_on_deactivation' ) ) {
+			foreach ( array( 'gallery_items', 'items', 'settings' ) as $name ) {
+				// Deleting the plugin's own tables is an explicit, opt-in administrator choice.
+				$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::table( $name ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
+			}
 		}
 	}
 
 	public static function init() {
 		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
-		add_action( 'admin_post_sw_gallery_save', array( __CLASS__, 'save' ) );
-		add_action( 'admin_post_sw_gallery_delete', array( __CLASS__, 'delete' ) );
-		add_action( 'admin_post_sw_gallery_settings', array( __CLASS__, 'settings' ) );
-		add_shortcode( 'spotwalla_gallery', array( __CLASS__, 'shortcode' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'legacy_notice' ) );
+		add_action( 'admin_post_gfsw_save', array( __CLASS__, 'save' ) );
+		add_action( 'admin_post_gfsw_delete', array( __CLASS__, 'delete' ) );
+		add_action( 'admin_post_gfsw_settings', array( __CLASS__, 'settings' ) );
+		add_shortcode( 'gallery_for_spotwalla', array( __CLASS__, 'shortcode' ) );
+		// Shortcode name used before the plugin was renamed in version 1.0.2.
+		if ( ! shortcode_exists( 'spotwalla_gallery' ) ) {
+			add_shortcode( 'spotwalla_gallery', array( __CLASS__, 'shortcode' ) );
+		}
 	}
 
 	public static function menu() {
-		add_menu_page( 'SpotWalla Gallery', 'SpotWalla Gallery', 'manage_options', 'spotwalla-gallery', array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+		add_menu_page( 'Gallery for SpotWalla', 'Gallery for SpotWalla', 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+	}
+
+	// Versions before 1.0.2 were installed as "SpotWalla Gallery" and share this plugin's tables.
+	public static function legacy_notice() {
+		$screen = get_current_screen();
+		if ( ! class_exists( 'SW_Gallery', false ) || ! current_user_can( 'activate_plugins' ) || ! $screen ||
+			! in_array( $screen->id, array( 'plugins', 'toplevel_page_' . self::SLUG ), true ) ) {
+			return;
+		}
+		echo '<div class="notice notice-warning"><p>' . esc_html__( 'The old "SpotWalla Gallery" plugin is still active. Gallery for SpotWalla replaces it and already uses its maps and galleries. Make sure "Permanently delete all plugin tables" is unchecked, then deactivate and delete "SpotWalla Gallery".', 'gallery-for-spotwalla' ) . '</p></div>';
 	}
 
 	private static function authorize( $action ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage SpotWalla galleries.', 'spotwalla-gallery' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to manage SpotWalla galleries.', 'gallery-for-spotwalla' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( $action );
 	}
 
+	// Callers verify the nonce with authorize() and sanitize each value for its own context.
 	private static function posted( $key, $default = '' ) {
-		return isset( $_POST[ $key ] ) && is_scalar( $_POST[ $key ] ) ? wp_unslash( (string) $_POST[ $key ] ) : $default;
+		return isset( $_POST[ $key ] ) && is_scalar( $_POST[ $key ] ) ? wp_unslash( (string) $_POST[ $key ] ) : $default; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	}
 
+	// Callers verify the nonce with authorize(); each value is validated as a positive integer.
 	private static function posted_ids( $key ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! isset( $_POST[ $key ] ) ) {
 			return array();
 		}
@@ -143,6 +176,7 @@ final class SW_Gallery {
 			}
 			$ids[] = absint( $value );
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		return array_values( array_unique( $ids ) );
 	}
 
@@ -151,20 +185,18 @@ final class SW_Gallery {
 	}
 
 	private static function redirect( $message, $tab = 'maps' ) {
-		wp_safe_redirect( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $tab, 'sw_message' => $message ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'sw_message' => $message ), admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
 	private static function item( $id ) {
 		global $wpdb;
-		$table = self::table( 'items' );
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ), ARRAY_A );
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::table( 'items' ), $id ), ARRAY_A );
 	}
 
 	private static function gallery_ids_for( $item_id ) {
 		global $wpdb;
-		$relations = self::table( 'gallery_items' );
-		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( "SELECT gallery_id FROM $relations WHERE item_id = %d", $item_id ) ) );
+		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( 'SELECT gallery_id FROM %i WHERE item_id = %d', self::table( 'gallery_items' ), $item_id ) ) );
 	}
 
 	private static function public_url( $url ) {
@@ -191,7 +223,7 @@ final class SW_Gallery {
 	}
 
 	public static function save() {
-		self::authorize( 'sw_gallery_save' );
+		self::authorize( 'gfsw_save' );
 		global $wpdb;
 		$items      = self::table( 'items' );
 		$relations  = self::table( 'gallery_items' );
@@ -218,7 +250,8 @@ final class SW_Gallery {
 		}
 		if ( $gallery_ids ) {
 			$placeholders = implode( ',', array_fill( 0, count( $gallery_ids ), '%d' ) );
-			$found        = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM $items WHERE type = 'gallery' AND id IN ($placeholders)", $gallery_ids ) );
+			// $placeholders contains only %d placeholders, one per ID.
+			$found = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM %i WHERE type = 'gallery' AND id IN ($placeholders)", array_merge( array( $items ), $gallery_ids ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			if ( count( $found ) !== count( $gallery_ids ) ) {
 				self::redirect( 'invalid', $tab );
 			}
@@ -259,7 +292,7 @@ final class SW_Gallery {
 
 	public static function delete() {
 		$id = absint( self::posted( 'id' ) );
-		self::authorize( 'sw_gallery_delete_' . $id );
+		self::authorize( 'gfsw_delete_' . $id );
 		global $wpdb;
 		$item = self::item( $id );
 		if ( ! $item ) {
@@ -275,7 +308,7 @@ final class SW_Gallery {
 	}
 
 	public static function settings() {
-		self::authorize( 'sw_gallery_settings' );
+		self::authorize( 'gfsw_settings' );
 		global $wpdb;
 		$tab    = 'galleries' === sanitize_key( self::posted( 'tab' ) ) ? 'galleries' : 'maps';
 		$result = $wpdb->replace(
@@ -310,9 +343,9 @@ final class SW_Gallery {
 
 	private static function nav( $tab ) {
 		?>
-		<nav class="nav-tab-wrapper" aria-label="SpotWalla Gallery sections">
+		<nav class="nav-tab-wrapper" aria-label="Gallery for SpotWalla sections">
 			<?php foreach ( array( 'maps' => 'Maps', 'galleries' => 'Galleries', 'about' => 'About' ) as $key => $label ) : ?>
-				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
+				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
 		</nav>
 		<?php
@@ -322,25 +355,26 @@ final class SW_Gallery {
 		global $wp_version;
 		$plugin  = get_file_data( __FILE__, array( 'version' => 'Version' ) );
 		$links   = array(
-			'Repository' => self::REPOSITORY,
-			'README'     => self::REPOSITORY . '/blob/main/README.md',
-			'License'    => self::REPOSITORY . '/blob/main/LICENSE',
+			'Repository'                  => self::REPOSITORY,
+			'README'                      => self::REPOSITORY . '/blob/main/README.md',
+			'License (GPLv2 or later)'    => self::REPOSITORY . '/blob/main/LICENSE',
+			'SpotWalla terms and privacy' => 'https://spotwalla.com/tos',
 		);
 		$details = sprintf( 'Plugin %s, WordPress %s, PHP %s', $plugin['version'], $wp_version, PHP_VERSION );
 		?>
 		<div class="wrap">
-			<h1>SpotWalla Gallery</h1>
+			<h1>Gallery for SpotWalla</h1>
 			<?php self::nav( 'about' ); ?>
 			<h2>About</h2>
-			<p>SpotWalla Gallery manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries.</p>
-			<div class="notice notice-info inline"><p><strong>Disclaimer:</strong> SpotWalla Gallery is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla.</p></div>
+			<p>Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy.</p>
+			<div class="notice notice-info inline"><p><strong>Disclaimer:</strong> Gallery for SpotWalla is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla.</p></div>
 			<table class="form-table" role="presentation">
 				<tr><th>Version</th><td><?php echo esc_html( $plugin['version'] ); ?></td></tr>
 				<?php foreach ( $links as $label => $url ) : ?>
 					<tr><th><?php echo esc_html( $label ); ?></th><td><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url ); ?><span class="screen-reader-text"> (opens in a new tab)</span></a></td></tr>
 				<?php endforeach; ?>
 			</table>
-			<p>The plugin is released under the MIT License. Copies of <code>README.md</code> and <code>LICENSE</code> are also included in the plugin's folder.</p>
+			<p>The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder.</p>
 			<h2>Reporting issues</h2>
 			<ol>
 				<li>Search <a href="<?php echo esc_url( self::REPOSITORY . '/issues' ); ?>" target="_blank" rel="noopener noreferrer">existing issues<span class="screen-reader-text"> (opens in a new tab)</span></a> to see whether the problem is already reported.</li>
@@ -360,13 +394,17 @@ final class SW_Gallery {
 		global $wpdb;
 		$table     = self::table( 'items' );
 		$relations = self::table( 'gallery_items' );
+		// Read-only navigation parameters; every state change is a nonce-protected POST.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		$tab = 'maps';
 		if ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'galleries' === sanitize_key( $_GET['tab'] ) ) {
 			$tab = 'galleries';
 		} elseif ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'about' === sanitize_key( $_GET['tab'] ) ) {
 			$tab = 'about';
 		}
-		$edit = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
+		$edit    = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
+		$message = isset( $_GET['sw_message'] ) && is_scalar( $_GET['sw_message'] ) ? sanitize_key( $_GET['sw_message'] ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( $edit && 'gallery' === $edit['type'] ) {
 			$tab = 'galleries';
 		} elseif ( $edit ) {
@@ -377,11 +415,11 @@ final class SW_Gallery {
 			return;
 		}
 		$is_gallery = 'galleries' === $tab;
-		$galleries  = $wpdb->get_results( "SELECT * FROM $table WHERE type = 'gallery' ORDER BY id DESC", ARRAY_A );
-		$rows       = $is_gallery ? $galleries : $wpdb->get_results( "SELECT * FROM $table WHERE type <> 'gallery' ORDER BY id DESC", ARRAY_A );
+		$galleries  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE type = 'gallery' ORDER BY id DESC", $table ), ARRAY_A );
+		$rows       = $is_gallery ? $galleries : $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE type <> 'gallery' ORDER BY id DESC", $table ), ARRAY_A );
 		$by_item    = array();
 		$counts     = array();
-		foreach ( $wpdb->get_results( "SELECT r.gallery_id, r.item_id FROM $relations r INNER JOIN $table g ON g.id = r.gallery_id AND g.type = 'gallery' INNER JOIN $table m ON m.id = r.item_id AND m.type <> 'gallery' ORDER BY r.gallery_id ASC", ARRAY_A ) as $relation ) {
+		foreach ( $wpdb->get_results( $wpdb->prepare( "SELECT r.gallery_id, r.item_id FROM %i r INNER JOIN %i g ON g.id = r.gallery_id AND g.type = 'gallery' INNER JOIN %i m ON m.id = r.item_id AND m.type <> 'gallery' ORDER BY r.gallery_id ASC", $relations, $table, $table ), ARRAY_A ) as $relation ) {
 			$by_item[ $relation['item_id'] ][] = $relation['gallery_id'];
 			$counts[ $relation['gallery_id'] ] = ( isset( $counts[ $relation['gallery_id'] ] ) ? $counts[ $relation['gallery_id'] ] : 0 ) + 1;
 		}
@@ -395,22 +433,21 @@ final class SW_Gallery {
 			'invalid' => 'Not saved. Supply a title (maximum 255 bytes), valid options and galleries, and an HTTPS SpotWalla public URL for maps. Existing types cannot be changed.',
 			'error'   => 'A database error occurred. Please try again.',
 		);
-		$message  = isset( $_GET['sw_message'] ) && is_scalar( $_GET['sw_message'] ) ? sanitize_key( $_GET['sw_message'] ) : '';
 		$base_url = admin_url( 'admin.php' );
 		?>
 		<div class="wrap">
-			<h1>SpotWalla Gallery</h1>
+			<h1>Gallery for SpotWalla</h1>
 			<?php self::nav( $tab ); ?>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
 				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
 			<?php endif; ?>
-			<p><?php echo esc_html( $is_gallery ? 'Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps\' title and description visibility.' : 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.' ); ?> Embed any map or gallery with <code>[spotwalla_gallery id="123"]</code>.</p>
+			<p><?php echo esc_html( $is_gallery ? 'Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps\' title and description visibility.' : 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.' ); ?> Embed any map or gallery with <code>[gallery_for_spotwalla id="123"]</code>. Existing <code>[spotwalla_gallery]</code> shortcodes continue to work.</p>
 			<h2><?php echo esc_html( ( $edit ? 'Edit ' : 'Add ' ) . $noun ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="sw_gallery_save">
+				<input type="hidden" name="action" value="gfsw_save">
 				<input type="hidden" name="id" value="<?php echo esc_attr( $item['id'] ); ?>">
 				<?php if ( $is_gallery ) : ?><input type="hidden" name="type" value="gallery"><?php endif; ?>
-				<?php wp_nonce_field( 'sw_gallery_save' ); ?>
+				<?php wp_nonce_field( 'gfsw_save' ); ?>
 				<table class="form-table" role="presentation">
 					<tr><th><label for="sw-title">Title</label></th><td><input class="regular-text" id="sw-title" name="title" required maxlength="255" value="<?php echo esc_attr( $item['title'] ); ?>"></td></tr>
 					<?php if ( ! $is_gallery ) : ?>
@@ -449,7 +486,7 @@ final class SW_Gallery {
 								<label><input type="checkbox" name="gallery_ids[]" value="<?php echo esc_attr( $gallery['id'] ); ?>" <?php checked( in_array( (int) $gallery['id'], $selected, true ) ); ?>> <?php echo esc_html( $gallery['title'] . ' (#' . $gallery['id'] . ')' ); ?></label><br>
 							<?php endforeach; ?>
 							<?php if ( ! $galleries ) : ?>
-								<p class="description">No galleries yet. <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => 'galleries' ), $base_url ) ); ?>">Create one on the Galleries tab.</a></p>
+								<p class="description">No galleries yet. <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => 'galleries' ), $base_url ) ); ?>">Create one on the Galleries tab.</a></p>
 							<?php else : ?>
 								<p class="description">Select any number of galleries. Galleries cannot be nested.</p>
 							<?php endif; ?>
@@ -467,7 +504,7 @@ final class SW_Gallery {
 					</td></tr>
 				</table>
 				<?php submit_button( 'Save ' . $noun ); ?>
-				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $tab ), $base_url ) ); ?>">Cancel editing</a><?php endif; ?>
+				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab ), $base_url ) ); ?>">Cancel editing</a><?php endif; ?>
 			</form>
 			<h2><?php echo esc_html( $is_gallery ? 'Galleries' : 'Maps' ); ?></h2>
 			<table class="widefat striped">
@@ -481,12 +518,12 @@ final class SW_Gallery {
 						<?php else : ?>
 							<td><?php echo esc_html( $row['type'] ); ?></td><td><?php echo esc_html( isset( $by_item[ $row['id'] ] ) ? implode( ', ', $by_item[ $row['id'] ] ) : '—' ); ?></td>
 						<?php endif; ?>
-						<td><code><?php echo esc_html( '[spotwalla_gallery id="' . $row['id'] . '"]' ); ?></code></td>
+						<td><code><?php echo esc_html( '[gallery_for_spotwalla id="' . $row['id'] . '"]' ); ?></code></td>
 						<td>
-							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $tab, 'edit' => $row['id'] ), $base_url ) ); ?>">Edit</a>
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'edit' => $row['id'] ), $base_url ) ); ?>">Edit</a>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-								<input type="hidden" name="action" value="sw_gallery_delete"><input type="hidden" name="id" value="<?php echo esc_attr( $row['id'] ); ?>">
-								<?php wp_nonce_field( 'sw_gallery_delete_' . $row['id'] ); ?>
+								<input type="hidden" name="action" value="gfsw_delete"><input type="hidden" name="id" value="<?php echo esc_attr( $row['id'] ); ?>">
+								<?php wp_nonce_field( 'gfsw_delete_' . $row['id'] ); ?>
 								<button class="button-link-delete" type="submit">Delete</button>
 							</form>
 						</td>
@@ -497,11 +534,10 @@ final class SW_Gallery {
 			</table>
 			<h2>Data retention</h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="sw_gallery_settings">
+				<input type="hidden" name="action" value="gfsw_settings">
 				<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ); ?>">
-				<?php wp_nonce_field( 'sw_gallery_settings' ); ?>
-				<?php $settings = self::table( 'settings' ); ?>
-				<label><input type="checkbox" name="delete_on_deactivation" value="1" <?php checked( $wpdb->get_var( "SELECT setting_value FROM $settings WHERE setting_key = 'delete_on_deactivation'" ), '1' ); ?>> Permanently delete all plugin tables, settings, maps, and galleries on deactivation.</label>
+				<?php wp_nonce_field( 'gfsw_settings' ); ?>
+				<label><input type="checkbox" name="delete_on_deactivation" value="1" <?php checked( self::setting( 'delete_on_deactivation' ), '1' ); ?>> Permanently delete all plugin tables, settings, maps, and galleries on deactivation.</label>
 				<p>Unchecked by default: retain data for reactivation. Deletion cannot be undone; embedded shortcodes will have no content.</p>
 				<?php submit_button( 'Save retention setting' ); ?>
 			</form>
@@ -555,7 +591,7 @@ final class SW_Gallery {
 	}
 
 	public static function shortcode( $attributes ) {
-		$attributes = shortcode_atts( array( 'id' => 0 ), $attributes, 'spotwalla_gallery' );
+		$attributes = shortcode_atts( array( 'id' => 0 ), $attributes, 'gallery_for_spotwalla' );
 		if ( ! is_scalar( $attributes['id'] ) || ! preg_match( '/^[1-9][0-9]*$/', (string) $attributes['id'] ) ) {
 			return '';
 		}
@@ -569,7 +605,7 @@ final class SW_Gallery {
 		global $wpdb;
 		$table     = self::table( 'items' );
 		$relations = self::table( 'gallery_items' );
-		$rows      = $wpdb->get_results( $wpdb->prepare( "SELECT m.* FROM $table m INNER JOIN $relations r ON r.item_id = m.id WHERE r.gallery_id = %d AND m.type <> 'gallery' ORDER BY m.id ASC", $item['id'] ), ARRAY_A );
+		$rows      = $wpdb->get_results( $wpdb->prepare( "SELECT m.* FROM %i m INNER JOIN %i r ON r.item_id = m.id WHERE r.gallery_id = %d AND m.type <> 'gallery' ORDER BY m.id ASC", $table, $relations, $item['id'] ), ARRAY_A );
 		$html      = '<section class="sw-gallery-group"' . self::style( $item ) . '><h2>' . esc_html( $item['title'] ) . '</h2><p>' . nl2br( esc_html( $item['description'] ) ) . '</p>';
 		foreach ( $rows as $row ) {
 			$html .= self::card( $row, $item );
@@ -578,6 +614,6 @@ final class SW_Gallery {
 	}
 }
 
-register_activation_hook( __FILE__, array( 'SW_Gallery', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'SW_Gallery', 'deactivate' ) );
-SW_Gallery::init();
+register_activation_hook( __FILE__, array( 'Gallery_For_SpotWalla', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'Gallery_For_SpotWalla', 'deactivate' ) );
+Gallery_For_SpotWalla::init();

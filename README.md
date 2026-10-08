@@ -1,14 +1,18 @@
-# SpotWalla Gallery
+# Gallery for SpotWalla
 
-A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and gallery groups. Requires WordPress 6.0+ and PHP 7.4+.
+A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and gallery groups. Requires WordPress 6.2+ and PHP 7.4+. Licensed under the GNU General Public License v2 or later (see [LICENSE](LICENSE)).
 
-> **Disclaimer:** SpotWalla Gallery is an independent project. It is **not** affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used only to describe compatibility. Report plugin problems to this repository, not to SpotWalla.
+Before version 1.0.2 this plugin was named **SpotWalla Gallery** (`spotwalla-gallery`). It was renamed to follow the WordPress.org rule that plugin names must not begin with another project's trademark.
+
+> **Disclaimer:** Gallery for SpotWalla is an independent project. It is **not** affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used only to describe compatibility. Report plugin problems to this repository, not to SpotWalla.
 
 ## Installation
 
-1. Download `spotwalla-gallery-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/spotwalla-gallery/`.
-2. Activate **SpotWalla Gallery** in WordPress **Plugins**.
-3. Open **SpotWalla Gallery** in the administrator menu.
+1. Download `gallery-for-spotwalla-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/gallery-for-spotwalla/`.
+2. Activate **Gallery for SpotWalla** in WordPress **Plugins**.
+3. Open **Gallery for SpotWalla** in the administrator menu.
+
+**Upgrading from SpotWalla Gallery 1.0.0 or 1.0.1:** because the plugin folder changed, WordPress installs 1.0.2 as a separate plugin. Your maps and galleries stay in the same database tables. Make sure **Permanently delete all plugin tables...** under **Data retention** is unchecked, deactivate and delete **SpotWalla Gallery**, then install and activate **Gallery for SpotWalla**. A warning is shown while the old plugin is still active.
 
 The plugin supports individual WordPress sites. On multisite, activate and manage it separately on each site; network activation is not supported.
 
@@ -47,12 +51,14 @@ Search [existing issues](https://github.com/oconnoradv/SpotwallaGallary/issues) 
 Use a WordPress **Shortcode** block (or a classic editor shortcode):
 
 ```text
-[spotwalla_gallery id="123"]
+[gallery_for_spotwalla id="123"]
 ```
+
+Shortcodes from earlier versions, `[spotwalla_gallery id="123"]`, continue to work.
 
 Replace `123` with a map or gallery ID. A map renders its visible title/link, visible description, and lazy-loaded iframe; a gallery renders its maps in creation order, applying its visibility overrides. Missing or invalid IDs render nothing. The same shortcode can be used more than once on a page.
 
-SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link when it is shown. Loading maps sends requests to SpotWalla; account for this in your site's privacy policy and consent configuration.
+SpotWalla controls whether a URL can be embedded. If the remote page is unavailable, private, or blocks framing, visitors can still use the title link when it is shown. Loading maps sends requests from visitors' browsers to SpotWalla (their IP address, browser information, and the map link; no referrer is sent), and SpotWalla may set cookies and use analytics. See SpotWalla's [Terms of Service and Privacy Policy](https://spotwalla.com/tos), and account for this in your site's privacy policy and consent configuration.
 
 ## Storage and deactivation
 
@@ -68,12 +74,12 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitting to WordPress.org, run the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin (`wp plugin check gallery-for-spotwalla`); it should report no errors. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 
-Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, README, and license inside a single `spotwalla-gallery/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
+Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, `readme.txt` (the WordPress.org readme), `README.md`, and the license inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
 
-To publish, update the plugin's `Version:` header, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
+To publish, update the plugin's `Version:` header and the `Stable tag` in `readme.txt`, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
 
 The action revisions and scanner versions are pinned in the workflow; update them periodically. If adding runtime assets, update the packaging allowlist in `.github/scripts/build_release.py`.
