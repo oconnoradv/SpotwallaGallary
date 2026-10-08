@@ -2,6 +2,8 @@
 
 A WordPress plugin for public SpotWalla tracks, trips, retrospectives, and gallery groups. Requires WordPress 6.0+ and PHP 7.4+.
 
+> **Disclaimer:** SpotWalla Gallery is an independent project. It is **not** affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used only to describe compatibility. Report plugin problems to this repository, not to SpotWalla.
+
 ## Installation
 
 1. Download `spotwalla-gallery-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/spotwalla-gallery/`.
@@ -34,6 +36,12 @@ SpotWalla does not currently support setting the initial map layer (Streets, Ter
 
 **Inherit site theme** is enabled by default: headings, text, links, and backgrounds use the site's styles, with a responsive full-width map at 450px height. Uncheck it to set each map's **Description background color**, **Description text and link color**, and **Custom map dimensions** (width and map height, 200–2400px). Custom widths shrink to fit the available space. Galleries can set container colors and width; maps retain their individual styling. These settings style the plugin's title and description cards, not the contents of SpotWalla's cross-origin maps.
 
+The **About** tab shows the installed version, the disclaimer that this project is not affiliated with or approved by SpotWalla, and links to this repository, the README, and the license, with instructions for reporting issues.
+
+## Reporting issues
+
+Search [existing issues](https://github.com/oconnoradv/SpotwallaGallary/issues) first, then [open a new issue](https://github.com/oconnoradv/SpotwallaGallary/issues/new) with a descriptive title, the expected and actual behavior, steps to reproduce, the map type, any error messages or screenshots, and your plugin, WordPress, and PHP versions (shown on the **About** tab). Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue.
+
 ## Embedding in pages or posts
 
 Use a WordPress **Shortcode** block (or a classic editor shortcode):
@@ -60,7 +68,7 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
-Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check both tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
+Check PHP syntax locally with `php -l spotwalla-gallery.php`. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrade from 1.0.0, and verify both data-retaining and data-deleting deactivations.
 
 ## Building and publishing releases
 

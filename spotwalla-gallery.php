@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: SpotWalla Gallery
- * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and gallery groups.
+ * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and gallery groups. Independent project; not affiliated with or approved by SpotWalla.
  * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class SW_Gallery {
 	const DB_VERSION   = '3';
+	const REPOSITORY   = 'https://github.com/oconnoradv/SpotwallaGallary';
 	const MAP_TYPES    = array( 'track', 'trip', 'retrospective' );
 	const OVERRIDES    = array( 'item', 'show', 'hide' );
 	// Density/Fill Percentage values offered by the SpotWalla trip viewer (fillFactor).
@@ -307,6 +308,51 @@ final class SW_Gallery {
 		<?php
 	}
 
+	private static function nav( $tab ) {
+		?>
+		<nav class="nav-tab-wrapper" aria-label="SpotWalla Gallery sections">
+			<?php foreach ( array( 'maps' => 'Maps', 'galleries' => 'Galleries', 'about' => 'About' ) as $key => $label ) : ?>
+				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
+			<?php endforeach; ?>
+		</nav>
+		<?php
+	}
+
+	private static function about() {
+		global $wp_version;
+		$plugin  = get_file_data( __FILE__, array( 'version' => 'Version' ) );
+		$links   = array(
+			'Repository' => self::REPOSITORY,
+			'README'     => self::REPOSITORY . '/blob/main/README.md',
+			'License'    => self::REPOSITORY . '/blob/main/LICENSE',
+		);
+		$details = sprintf( 'Plugin %s, WordPress %s, PHP %s', $plugin['version'], $wp_version, PHP_VERSION );
+		?>
+		<div class="wrap">
+			<h1>SpotWalla Gallery</h1>
+			<?php self::nav( 'about' ); ?>
+			<h2>About</h2>
+			<p>SpotWalla Gallery manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries.</p>
+			<div class="notice notice-info inline"><p><strong>Disclaimer:</strong> SpotWalla Gallery is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla.</p></div>
+			<table class="form-table" role="presentation">
+				<tr><th>Version</th><td><?php echo esc_html( $plugin['version'] ); ?></td></tr>
+				<?php foreach ( $links as $label => $url ) : ?>
+					<tr><th><?php echo esc_html( $label ); ?></th><td><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url ); ?><span class="screen-reader-text"> (opens in a new tab)</span></a></td></tr>
+				<?php endforeach; ?>
+			</table>
+			<p>The plugin is released under the MIT License. Copies of <code>README.md</code> and <code>LICENSE</code> are also included in the plugin's folder.</p>
+			<h2>Reporting issues</h2>
+			<ol>
+				<li>Search <a href="<?php echo esc_url( self::REPOSITORY . '/issues' ); ?>" target="_blank" rel="noopener noreferrer">existing issues<span class="screen-reader-text"> (opens in a new tab)</span></a> to see whether the problem is already reported.</li>
+				<li>If not, sign in to GitHub and <a href="<?php echo esc_url( self::REPOSITORY . '/issues/new' ); ?>" target="_blank" rel="noopener noreferrer">open a new issue<span class="screen-reader-text"> (opens in a new tab)</span></a> with a short, descriptive title.</li>
+				<li>Describe what you expected and what happened, the steps to reproduce it, the map type (trip, track, or retrospective), and any error messages or screenshots.</li>
+				<li>Include your environment: <code><?php echo esc_html( $details ); ?></code>.</li>
+				<li>Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue.</li>
+			</ol>
+		</div>
+		<?php
+	}
+
 	public static function admin() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -317,12 +363,18 @@ final class SW_Gallery {
 		$tab = 'maps';
 		if ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'galleries' === sanitize_key( $_GET['tab'] ) ) {
 			$tab = 'galleries';
+		} elseif ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'about' === sanitize_key( $_GET['tab'] ) ) {
+			$tab = 'about';
 		}
 		$edit = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
 		if ( $edit && 'gallery' === $edit['type'] ) {
 			$tab = 'galleries';
 		} elseif ( $edit ) {
 			$tab = 'maps';
+		}
+		if ( 'about' === $tab ) {
+			self::about();
+			return;
 		}
 		$is_gallery = 'galleries' === $tab;
 		$galleries  = $wpdb->get_results( "SELECT * FROM $table WHERE type = 'gallery' ORDER BY id DESC", ARRAY_A );
@@ -348,11 +400,7 @@ final class SW_Gallery {
 		?>
 		<div class="wrap">
 			<h1>SpotWalla Gallery</h1>
-			<nav class="nav-tab-wrapper" aria-label="SpotWalla Gallery sections">
-				<?php foreach ( array( 'maps' => 'Maps', 'galleries' => 'Galleries' ) as $key => $label ) : ?>
-					<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $key ), $base_url ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
-				<?php endforeach; ?>
-			</nav>
+			<?php self::nav( $tab ); ?>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
 				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
 			<?php endif; ?>
