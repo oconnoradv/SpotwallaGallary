@@ -15,6 +15,7 @@ FILES = (
     "README.md",
     "LICENSE",
     "languages/gallery-for-spotwalla.pot",
+    "images/logo-256x256.jpg",
 )
 
 
