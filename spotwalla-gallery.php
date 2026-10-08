@@ -323,13 +323,13 @@ final class SW_Gallery {
 			<h1>SpotWalla Gallery</h1>
 			<nav class="nav-tab-wrapper" aria-label="SpotWalla Gallery sections">
 				<?php foreach ( array( 'maps' => 'Maps', 'galleries' => 'Galleries' ) as $key => $label ) : ?>
-					<a class="nav-tab<?php echo $tab === $key ? ' nav-tab-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $key ), $base_url ) ); ?>"<?php echo $tab === $key ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+					<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $key ), $base_url ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
 			</nav>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
-				<div class="notice <?php echo in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success'; ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
+				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
 			<?php endif; ?>
-			<p><?php echo $is_gallery ? 'Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps\' title and description visibility.' : 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.'; ?> Embed any map or gallery with <code>[spotwalla_gallery id="123"]</code>.</p>
+			<p><?php echo esc_html( $is_gallery ? 'Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps\' title and description visibility.' : 'Add tracks, trips, and retrospectives, and assign each map to any number of galleries.' ); ?> Embed any map or gallery with <code>[spotwalla_gallery id="123"]</code>.</p>
 			<h2><?php echo esc_html( ( $edit ? 'Edit ' : 'Add ' ) . $noun ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="sw_gallery_save">
@@ -392,9 +392,9 @@ final class SW_Gallery {
 				<?php submit_button( 'Save ' . $noun ); ?>
 				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => 'spotwalla-gallery', 'tab' => $tab ), $base_url ) ); ?>">Cancel editing</a><?php endif; ?>
 			</form>
-			<h2><?php echo $is_gallery ? 'Galleries' : 'Maps'; ?></h2>
+			<h2><?php echo esc_html( $is_gallery ? 'Galleries' : 'Maps' ); ?></h2>
 			<table class="widefat striped">
-				<thead><tr><th>ID</th><th>Title</th><?php if ( ! $is_gallery ) : ?><th>Type</th><?php endif; ?><th><?php echo $is_gallery ? 'Maps' : 'Gallery IDs'; ?></th><th>Shortcode</th><th>Actions</th></tr></thead>
+				<thead><tr><th>ID</th><th>Title</th><?php if ( ! $is_gallery ) : ?><th>Type</th><?php endif; ?><th><?php echo esc_html( $is_gallery ? 'Maps' : 'Gallery IDs' ); ?></th><th>Shortcode</th><th>Actions</th></tr></thead>
 				<tbody>
 				<?php foreach ( $rows as $row ) : ?>
 					<tr>
@@ -415,7 +415,7 @@ final class SW_Gallery {
 						</td>
 					</tr>
 				<?php endforeach; ?>
-				<?php if ( ! $rows ) : ?><tr><td colspan="<?php echo $is_gallery ? 5 : 6; ?>"><?php echo $is_gallery ? 'No galleries yet.' : 'No maps yet.'; ?></td></tr><?php endif; ?>
+				<?php if ( ! $rows ) : ?><tr><td colspan="<?php echo esc_attr( $is_gallery ? 5 : 6 ); ?>"><?php echo esc_html( $is_gallery ? 'No galleries yet.' : 'No maps yet.' ); ?></td></tr><?php endif; ?>
 				</tbody>
 			</table>
 			<h2>Data retention</h2>
