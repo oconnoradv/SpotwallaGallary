@@ -9,7 +9,13 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 PLUGIN = "gallery-for-spotwalla"
-FILES = ("gallery-for-spotwalla.php", "readme.txt", "README.md", "LICENSE")
+FILES = (
+    "gallery-for-spotwalla.php",
+    "readme.txt",
+    "README.md",
+    "LICENSE",
+    "languages/gallery-for-spotwalla.pot",
+)
 
 
 def build(tag: str = "") -> Path:

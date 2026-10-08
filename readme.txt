@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,7 @@ Features:
 * **About** tab: version, links, and how to report issues.
 * Embed with `[gallery_for_spotwalla id="123"]`. The shortcode from earlier versions, `[spotwalla_gallery id="123"]`, still works.
 * Data is kept when the plugin is deactivated, unless you choose to delete it.
+* Translation-ready: all admin text can be translated.
 
 SpotWalla does not allow the map layer (streets, terrain, satellite) or picture icons to be set from an embed link, so viewers choose those on the embedded map.
 
@@ -42,7 +43,7 @@ This plugin embeds maps from SpotWalla (https://spotwalla.com), an online person
 4. Optionally create galleries on the **Galleries** tab and assign maps to them.
 5. Add the shortcode shown in the list to any post or page.
 
-**Upgrading from "SpotWalla Gallery" 1.0.0 or 1.0.1:** the plugin was renamed. Your maps and galleries are kept in the same database tables. Make sure "Permanently delete all plugin tables" is unchecked, deactivate and delete the old "SpotWalla Gallery" plugin, then install and activate Gallery for SpotWalla.
+**Upgrading from "SpotWalla Gallery" 1.0.0 or 1.0.1:** the plugin was renamed. Install and activate Gallery for SpotWalla first; it copies your maps and galleries, keeping their IDs so existing shortcodes keep working. Then deactivate and delete the old "SpotWalla Gallery" plugin. Back up before upgrading.
 
 == Frequently Asked Questions ==
 
@@ -64,6 +65,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
+= 1.0.3 =
+* The plugin's database tables are now named `{prefix}SpotGal_*`. Data in the old `{prefix}SW_*` tables is moved automatically, keeping the same IDs.
+* Translation-ready: all admin text uses the `gallery-for-spotwalla` text domain, and a translation template is included.
+
 = 1.0.2 =
 * Renamed to Gallery for SpotWalla, with the new `[gallery_for_spotwalla]` shortcode. `[spotwalla_gallery]` still works.
 * Licensed under GPLv2 or later.
@@ -79,6 +84,9 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Moves your maps and galleries into renamed database tables (same IDs) and adds translation support. Back up before updating.
 
 = 1.0.2 =
 The plugin is now Gallery for SpotWalla. Turn off deletion on deactivation, delete the old "SpotWalla Gallery" plugin, then activate this one; your maps and galleries are kept.
