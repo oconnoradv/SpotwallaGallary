@@ -296,9 +296,11 @@ final class SW_Gallery {
 		if ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'galleries' === sanitize_key( $_GET['tab'] ) ) {
 			$tab = 'galleries';
 		}
-		$edit      = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
-		if ( $edit ) {
-			$tab = self::tab_for( $edit['type'] );
+		$edit = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
+		if ( $edit && 'gallery' === $edit['type'] ) {
+			$tab = 'galleries';
+		} elseif ( $edit ) {
+			$tab = 'maps';
 		}
 		$is_gallery = 'galleries' === $tab;
 		$galleries  = $wpdb->get_results( "SELECT * FROM $table WHERE type = 'gallery' ORDER BY id DESC", ARRAY_A );
