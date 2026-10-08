@@ -10,7 +10,7 @@ Before version 1.0.2 this plugin was named **SpotWalla Gallery** (`spotwalla-gal
 
 ## Installation
 
-1. Download `gallery-for-spotwalla-X.Y.Z.zip` from [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/gallery-for-spotwalla/`.
+1. Download `gallery-for-spotwalla-X.Y.Z.zip` from the release marked **Latest** on [GitHub Releases](https://github.com/oconnoradv/SpotwallaGallary/releases) and upload it through **Plugins > Add New > Upload Plugin**, or copy this repository into `wp-content/plugins/gallery-for-spotwalla/`. Releases marked **Pre-release** with "(DEV)" in the title, including v1.0.0 through v1.0.4, are development builds kept for reference; use them only for testing.
 2. Activate **Gallery for SpotWalla** in WordPress **Plugins**.
 3. Open **Spotwalla Gallery** in the administrator menu (shown with a purple map icon). The official plugin name stays "Gallery for SpotWalla", as WordPress.org's trademark guideline requires.
 
@@ -89,5 +89,7 @@ Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. 
 The `.wordpress-org/` folder holds the plugin directory listing images, in the sizes WordPress.org recommends: banners at 772×250 and 1544×500 pixels and icons at 128×128 and 256×256 pixels. They are not part of the plugin ZIP. After the plugin is approved, copy them into the `assets/` folder of the WordPress.org SVN repository.
 
 To publish, update the plugin's `Version:` header and the `Stable tag` in `readme.txt`, merge the changes, and push a matching stable tag, such as `v1.0.0`. Tags that do not exactly match the header fail the build. Only tag pushes publish a GitHub Release with the installable ZIP and `.zip.sha256` checksum, and only after every check succeeds. Manual and scheduled runs do not publish. The release job alone receives `contents: write`; all other jobs have read-only repository permissions. GitHub Actions must be enabled with permission to create releases.
+
+The workflow publishes every tagged build as a stable release and marks it **Latest**. To mark an older or interim build as a development release, keep its tag and assets and run `gh release edit vX.Y.Z --prerelease --latest=false --title "Gallery for SpotWalla vX.Y.Z (DEV)"`. Then make sure the current stable release is still marked Latest (`gh release edit vA.B.C --latest`). Releases v1.0.0 through v1.0.4 are development releases; v1.0.5 is the first stable release.
 
 The action revisions and scanner versions are pinned in the workflow; update them periodically. If adding runtime assets, update the packaging allowlist in `.github/scripts/build_release.py`.

@@ -65,7 +65,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
+Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 is the first stable release.
+
 = 1.0.5 =
+* First stable release.
 * The page header and browser title show the plugin name, "Gallery for SpotWalla". Only the admin menu reads "Spotwalla Gallery".
 
 = 1.0.4 =
@@ -93,7 +96,7 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 == Upgrade Notice ==
 
 = 1.0.5 =
-The page header shows the plugin name again. No data changes.
+First stable release. The page header shows the plugin name again. No data changes.
 
 = 1.0.4 =
 Updates the admin menu name, icon color, and page header. No data changes.
