@@ -292,7 +292,10 @@ final class SW_Gallery {
 		global $wpdb;
 		$table     = self::table( 'items' );
 		$relations = self::table( 'gallery_items' );
-		$tab       = isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'galleries' === sanitize_key( $_GET['tab'] ) ? 'galleries' : 'maps';
+		$tab = 'maps';
+		if ( isset( $_GET['tab'] ) && is_scalar( $_GET['tab'] ) && 'galleries' === sanitize_key( $_GET['tab'] ) ) {
+			$tab = 'galleries';
+		}
 		$edit      = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
 		if ( $edit ) {
 			$tab = self::tab_for( $edit['type'] );
