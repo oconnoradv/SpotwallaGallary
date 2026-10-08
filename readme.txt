@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,9 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
+= 1.0.5 =
+* The page header and browser title show the plugin name, "Gallery for SpotWalla". Only the admin menu reads "Spotwalla Gallery".
+
 = 1.0.4 =
 * The admin menu and page header now read "Spotwalla Gallery", and the page header shows the project logo and the tagline "an O'ConnorADV project".
 * The admin menu icon is now purple.
@@ -88,6 +91,9 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+The page header shows the plugin name again. No data changes.
 
 = 1.0.4 =
 Updates the admin menu name, icon color, and page header. No data changes.

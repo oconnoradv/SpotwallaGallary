@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -289,12 +289,12 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Adds the plugin page to the admin menu as "Spotwalla Gallery".
+	 * Adds the plugin page to the admin menu, labeled "Spotwalla Gallery" in the menu only.
 	 *
 	 * @return void
 	 */
 	public static function menu() {
-		add_menu_page( __( 'Spotwalla Gallery', 'gallery-for-spotwalla' ), __( 'Spotwalla Gallery', 'gallery-for-spotwalla' ), 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
+		add_menu_page( __( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ), __( 'Spotwalla Gallery', 'gallery-for-spotwalla' ), 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
 	}
 
 	/**
@@ -317,7 +317,7 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Outputs the page header: logo, "Spotwalla Gallery" title, and tagline.
+	 * Outputs the page header: logo, plugin name, and tagline.
 	 *
 	 * @return void
 	 */
@@ -326,7 +326,7 @@ final class Gallery_For_SpotWalla {
 		<div class="gfsw-header">
 			<img src="<?php echo esc_url( plugins_url( 'images/logo-256x256.jpg', __FILE__ ) ); ?>" width="128" height="128" alt="" />
 			<div>
-				<h1><?php esc_html_e( 'Spotwalla Gallery', 'gallery-for-spotwalla' ); ?></h1>
+				<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
 				<p class="gfsw-tagline"><?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?></p>
 			</div>
 		</div>
@@ -701,7 +701,7 @@ final class Gallery_For_SpotWalla {
 			'about'     => __( 'About', 'gallery-for-spotwalla' ),
 		);
 		?>
-		<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Spotwalla Gallery sections', 'gallery-for-spotwalla' ); ?>">
+		<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Gallery for SpotWalla sections', 'gallery-for-spotwalla' ); ?>">
 			<?php foreach ( $tabs as $key => $label ) : ?>
 				<a class="nav-tab<?php echo esc_attr( $tab === $key ? ' nav-tab-active' : '' ); ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => $key ), admin_url( 'admin.php' ) ) ); ?>"<?php if ( $tab === $key ) : ?> aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
