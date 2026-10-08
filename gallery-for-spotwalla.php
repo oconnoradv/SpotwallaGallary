@@ -23,20 +23,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Gallery for SpotWalla plugin.
+ *
+ * Stores SpotWalla maps (tracks, trips, retrospectives) and galleries in custom
+ * tables, provides the Maps, Galleries, and About admin tabs, and renders the
+ * [gallery_for_spotwalla] shortcode. All members are static; the class is never instantiated.
+ */
 final class Gallery_For_SpotWalla {
+	/**
+	 * Plugin slug, used as the admin page slug.
+	 */
 	const SLUG         = 'gallery-for-spotwalla';
+	/**
+	 * Database schema version; install() runs again when the stored version is lower.
+	 */
 	const DB_VERSION   = '3';
+	/**
+	 * Source repository, linked from the About tab.
+	 */
 	const REPOSITORY   = 'https://github.com/oconnoradv/SpotwallaGallary';
+	/**
+	 * Item types managed on the Maps tab. Galleries use the type "gallery".
+	 */
 	const MAP_TYPES    = array( 'track', 'trip', 'retrospective' );
+	/**
+	 * Gallery visibility overrides: use each map's setting, or show or hide for all maps.
+	 */
 	const OVERRIDES    = array( 'item', 'show', 'hide' );
-	// Density/Fill Percentage values offered by the SpotWalla trip viewer (fillFactor).
+	/**
+	 * Density/Fill Percentage values offered by the SpotWalla trip viewer (fillFactor),
+	 * as value => label. An empty value means use the trip's own setting.
+	 */
 	const FILL_FACTORS = array( '0' => 'None', '0.1' => '0.1%', '0.3' => '0.3%', '0.5' => '0.5%', '1' => '1%', '3' => '3%', '5' => '5%', '10' => '10%', '20' => '20%', '30' => '30%', '40' => '40%', '50' => '50%', '60' => '60%', '70' => '70%', '80' => '80%', '90' => '90%', '100' => 'All (100%)' );
 
+	/**
+	 * Returns the full name of one of the plugin's tables.
+	 *
+	 * @param string $name Table suffix: items, settings, or gallery_items.
+	 * @return string Table name including the site's database prefix.
+	 */
 	private static function table( $name ) {
 		global $wpdb;
 		return $wpdb->prefix . 'SW_' . $name;
 	}
 
+	/**
+	 * Activation hook. Creates or upgrades the tables for the current site.
+	 *
+	 * Network activation is refused because each site needs its own tables.
+	 *
+	 * @param bool $network_wide Whether the plugin is being network-activated.
+	 * @return void
+	 */
 	public static function activate( $network_wide = false ) {
 		if ( $network_wide ) {
 			wp_die( esc_html__( 'Please activate Gallery for SpotWalla separately on each site, not network-wide.', 'gallery-for-spotwalla' ) );
@@ -44,6 +83,15 @@ final class Gallery_For_SpotWalla {
 		self::install();
 	}
 
+	/**
+	 * Creates or upgrades the plugin tables with dbDelta() and records the schema version.
+	 *
+	 * Also adds the default data-retention setting and copies 1.0.0 single-gallery
+	 * assignments (items.gallery_id) into the gallery_items table. The version is
+	 * not recorded if that migration fails, so it is retried on the next load.
+	 *
+	 * @return void
+	 */
 	private static function install() {
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -95,11 +143,25 @@ final class Gallery_For_SpotWalla {
 		$wpdb->replace( $settings, array( 'setting_key' => 'db_version', 'setting_value' => self::DB_VERSION ) );
 	}
 
+	/**
+	 * Reads a value from the plugin's settings table.
+	 *
+	 * @param string $key Setting key, such as db_version or delete_on_deactivation.
+	 * @return string|null The stored value, or null if it is missing.
+	 */
 	private static function setting( $key ) {
 		global $wpdb;
 		return $wpdb->get_var( $wpdb->prepare( 'SELECT setting_value FROM %i WHERE setting_key = %s', self::table( 'settings' ), $key ) );
 	}
 
+	/**
+	 * Runs install() when the tables are missing or older than DB_VERSION.
+	 *
+	 * Hooked to plugins_loaded so updates that replace the files without
+	 * reactivating the plugin still upgrade the schema.
+	 *
+	 * @return void
+	 */
 	public static function maybe_upgrade() {
 		global $wpdb;
 		$suppress = $wpdb->suppress_errors();
@@ -110,6 +172,13 @@ final class Gallery_For_SpotWalla {
 		}
 	}
 
+	/**
+	 * Deactivation hook. Drops the plugin tables only if the administrator opted in.
+	 *
+	 * By default all maps, galleries, and settings are kept for reactivation.
+	 *
+	 * @return void
+	 */
 	public static function deactivate() {
 		global $wpdb;
 		if ( '1' === self::setting( 'delete_on_deactivation' ) ) {
@@ -120,6 +189,11 @@ final class Gallery_For_SpotWalla {
 		}
 	}
 
+	/**
+	 * Registers the plugin's hooks, admin-post handlers, and shortcodes.
+	 *
+	 * @return void
+	 */
 	public static function init() {
 		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
@@ -134,11 +208,23 @@ final class Gallery_For_SpotWalla {
 		}
 	}
 
+	/**
+	 * Adds the Gallery for SpotWalla page to the admin menu.
+	 *
+	 * @return void
+	 */
 	public static function menu() {
 		add_menu_page( 'Gallery for SpotWalla', 'Gallery for SpotWalla', 'manage_options', self::SLUG, array( __CLASS__, 'admin' ), 'dashicons-location-alt' );
 	}
 
-	// Versions before 1.0.2 were installed as "SpotWalla Gallery" and share this plugin's tables.
+	/**
+	 * Warns administrators while the pre-1.0.2 "SpotWalla Gallery" plugin is still active.
+	 *
+	 * Both plugins share the same tables, so the old copy should be removed. The
+	 * notice appears only on the Plugins screen and this plugin's admin page.
+	 *
+	 * @return void
+	 */
 	public static function legacy_notice() {
 		$screen = get_current_screen();
 		if ( ! class_exists( 'SW_Gallery', false ) || ! current_user_can( 'activate_plugins' ) || ! $screen ||
@@ -148,6 +234,12 @@ final class Gallery_For_SpotWalla {
 		echo '<div class="notice notice-warning"><p>' . esc_html__( 'The old "SpotWalla Gallery" plugin is still active. Gallery for SpotWalla replaces it and already uses its maps and galleries. Make sure "Permanently delete all plugin tables" is unchecked, then deactivate and delete "SpotWalla Gallery".', 'gallery-for-spotwalla' ) . '</p></div>';
 	}
 
+	/**
+	 * Stops the request unless the user can manage options and the nonce is valid.
+	 *
+	 * @param string $action Nonce action the submitted form was created with.
+	 * @return void
+	 */
 	private static function authorize( $action ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You are not allowed to manage SpotWalla galleries.', 'gallery-for-spotwalla' ), '', array( 'response' => 403 ) );
@@ -155,12 +247,29 @@ final class Gallery_For_SpotWalla {
 		check_admin_referer( $action );
 	}
 
-	// Callers verify the nonce with authorize() and sanitize each value for its own context.
+	/**
+	 * Returns an unslashed scalar value from $_POST.
+	 *
+	 * Callers verify the nonce with authorize() first and sanitize the value for
+	 * its own context. Arrays and other non-scalar values return $default.
+	 *
+	 * @param string $key     Field name.
+	 * @param string $default Value to return when the field is missing or not scalar.
+	 * @return string
+	 */
 	private static function posted( $key, $default = '' ) {
 		return isset( $_POST[ $key ] ) && is_scalar( $_POST[ $key ] ) ? wp_unslash( (string) $_POST[ $key ] ) : $default; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	}
 
-	// Callers verify the nonce with authorize(); each value is validated as a positive integer.
+	/**
+	 * Returns a list of unique positive integer IDs from a $_POST array field.
+	 *
+	 * Callers verify the nonce with authorize() first.
+	 *
+	 * @param string $key Field name, such as gallery_ids.
+	 * @return int[]|null The IDs (empty if the field is missing), or null if the
+	 *                    field is not an array or contains an invalid value.
+	 */
 	private static function posted_ids( $key ) {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! isset( $_POST[ $key ] ) ) {
@@ -180,25 +289,59 @@ final class Gallery_For_SpotWalla {
 		return array_values( array_unique( $ids ) );
 	}
 
+	/**
+	 * Returns the admin tab that manages an item type.
+	 *
+	 * @param string $type Item type.
+	 * @return string "galleries" for galleries, otherwise "maps".
+	 */
 	private static function tab_for( $type ) {
 		return 'gallery' === $type ? 'galleries' : 'maps';
 	}
 
+	/**
+	 * Redirects back to the plugin page with a status message and exits.
+	 *
+	 * @param string $message Message key: saved, deleted, invalid, or error.
+	 * @param string $tab     Tab to return to.
+	 * @return void
+	 */
 	private static function redirect( $message, $tab = 'maps' ) {
 		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'sw_message' => $message ), admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
+	/**
+	 * Loads a map or gallery by ID.
+	 *
+	 * @param int $id Item ID.
+	 * @return array|null The item's row, or null if it does not exist.
+	 */
 	private static function item( $id ) {
 		global $wpdb;
 		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::table( 'items' ), $id ), ARRAY_A );
 	}
 
+	/**
+	 * Returns the IDs of the galleries a map belongs to.
+	 *
+	 * @param int $item_id Map ID.
+	 * @return int[]
+	 */
 	private static function gallery_ids_for( $item_id ) {
 		global $wpdb;
 		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( 'SELECT gallery_id FROM %i WHERE item_id = %d', self::table( 'gallery_items' ), $item_id ) ) );
 	}
 
+	/**
+	 * Validates a SpotWalla link.
+	 *
+	 * Only HTTPS URLs on spotwalla.com, www.spotwalla.com, or new.spotwalla.com,
+	 * without credentials and on the default port, are accepted.
+	 *
+	 * @param string $url URL to check.
+	 * @return string The sanitized URL, or an empty string if it is not allowed.
+	 */
 	private static function public_url( $url ) {
 		$url   = esc_url_raw( trim( $url ), array( 'https' ) );
 		$parts = wp_parse_url( $url );
@@ -212,16 +355,37 @@ final class Gallery_For_SpotWalla {
 		return $url;
 	}
 
+	/**
+	 * Reads and validates a gallery visibility override from $_POST.
+	 *
+	 * @param string $key Field name: member_title or member_description.
+	 * @return string|null One of OVERRIDES (default "item"), or null if invalid.
+	 */
 	private static function override( $key ) {
 		$value = sanitize_key( self::posted( $key, 'item' ) );
 		return in_array( $value, self::OVERRIDES, true ) ? $value : null;
 	}
 
+	/**
+	 * Validates a density (fill percentage) value.
+	 *
+	 * @param mixed $value Submitted or stored value.
+	 * @return string|null The value if it is empty (use the default) or a key of
+	 *                      FILL_FACTORS, otherwise null.
+	 */
 	private static function fill_factor( $value ) {
 		$value = (string) $value;
 		return '' === $value || array_key_exists( $value, self::FILL_FACTORS ) ? $value : null;
 	}
 
+	/**
+	 * Handles the add/edit form for maps and galleries (admin-post action gfsw_save).
+	 *
+	 * Validates every field, rejects type changes and unknown galleries, saves the
+	 * item, and replaces a map's gallery memberships. Always redirects.
+	 *
+	 * @return void
+	 */
 	public static function save() {
 		self::authorize( 'gfsw_save' );
 		global $wpdb;
@@ -290,6 +454,13 @@ final class Gallery_For_SpotWalla {
 		self::redirect( 'saved', $tab );
 	}
 
+	/**
+	 * Deletes a map or gallery and its memberships (admin-post action gfsw_delete).
+	 *
+	 * Deleting a gallery keeps its maps. Always redirects.
+	 *
+	 * @return void
+	 */
 	public static function delete() {
 		$id = absint( self::posted( 'id' ) );
 		self::authorize( 'gfsw_delete_' . $id );
@@ -307,6 +478,11 @@ final class Gallery_For_SpotWalla {
 		self::redirect( false === $result ? 'error' : 'deleted', $tab );
 	}
 
+	/**
+	 * Saves the data-retention setting (admin-post action gfsw_settings).
+	 *
+	 * @return void
+	 */
 	public static function settings() {
 		self::authorize( 'gfsw_settings' );
 		global $wpdb;
@@ -318,6 +494,14 @@ final class Gallery_For_SpotWalla {
 		self::redirect( false === $result ? 'error' : 'saved', $tab );
 	}
 
+	/**
+	 * Outputs a form row for a gallery's title or description visibility override.
+	 *
+	 * @param string $name  Field name.
+	 * @param string $label Row label.
+	 * @param string $value Currently selected override.
+	 * @return void
+	 */
 	private static function override_select( $name, $label, $value ) {
 		$labels = array( 'item' => "Use each map's setting", 'show' => 'Show for all maps', 'hide' => 'Hide for all maps' );
 		?>
@@ -329,6 +513,14 @@ final class Gallery_For_SpotWalla {
 		<?php
 	}
 
+	/**
+	 * Outputs the density (fill percentage) form row.
+	 *
+	 * @param string $value      Currently selected value; empty uses the default.
+	 * @param bool   $is_gallery Whether the row is for a gallery (an override for
+	 *                           its maps) or for a map.
+	 * @return void
+	 */
 	private static function fill_select( $value, $is_gallery ) {
 		$label = $is_gallery ? 'Map density in this gallery' : 'Density/Fill percentage';
 		?>
@@ -341,6 +533,12 @@ final class Gallery_For_SpotWalla {
 		<?php
 	}
 
+	/**
+	 * Outputs the Maps, Galleries, and About tab navigation.
+	 *
+	 * @param string $tab Active tab.
+	 * @return void
+	 */
 	private static function nav( $tab ) {
 		?>
 		<nav class="nav-tab-wrapper" aria-label="Gallery for SpotWalla sections">
@@ -351,6 +549,11 @@ final class Gallery_For_SpotWalla {
 		<?php
 	}
 
+	/**
+	 * Outputs the About tab: version, disclaimer, links, license, and issue-reporting steps.
+	 *
+	 * @return void
+	 */
 	private static function about() {
 		global $wp_version;
 		$plugin  = get_file_data( __FILE__, array( 'version' => 'Version' ) );
@@ -387,6 +590,15 @@ final class Gallery_For_SpotWalla {
 		<?php
 	}
 
+	/**
+	 * Outputs the plugin's admin page.
+	 *
+	 * The tab and edit ID come from the query string. Tab values are copied from
+	 * string literals so request data is never echoed. Editing an item always
+	 * opens the tab for its type.
+	 *
+	 * @return void
+	 */
 	public static function admin() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -545,6 +757,13 @@ final class Gallery_For_SpotWalla {
 		<?php
 	}
 
+	/**
+	 * Builds the inline style attribute for a map card or gallery.
+	 *
+	 * @param array $item Map or gallery row.
+	 * @return string The attribute (with a leading space), or an empty string when
+	 *                 the item inherits the site theme.
+	 */
 	private static function style( $item ) {
 		if ( $item['inherit_theme'] ) {
 			return '';
@@ -555,6 +774,16 @@ final class Gallery_For_SpotWalla {
 		return ' style="' . esc_attr( "background-color:$background;color:$color;width:{$width}px;max-width:100%;" ) . '"';
 	}
 
+	/**
+	 * Decides whether a map's title or description is shown.
+	 *
+	 * A gallery's "show" or "hide" override wins; otherwise the map's own setting applies.
+	 *
+	 * @param array      $item    Map row.
+	 * @param array|null $gallery Gallery being rendered, or null for a single map.
+	 * @param string     $field   "title" or "description".
+	 * @return bool
+	 */
 	private static function visible( $item, $gallery, $field ) {
 		$override = $gallery && isset( $gallery[ 'member_' . $field ] ) ? $gallery[ 'member_' . $field ] : 'item';
 		if ( 'show' === $override || 'hide' === $override ) {
@@ -563,6 +792,17 @@ final class Gallery_For_SpotWalla {
 		return ! isset( $item[ 'show_' . $field ] ) || '1' === (string) $item[ 'show_' . $field ];
 	}
 
+	/**
+	 * Adds the density setting to a trip's embed URL.
+	 *
+	 * A gallery's density, when set, overrides the map's. Tracks and
+	 * retrospectives are returned unchanged because SpotWalla ignores fillFactor there.
+	 *
+	 * @param string     $url     Validated SpotWalla URL.
+	 * @param array      $item    Map row.
+	 * @param array|null $gallery Gallery being rendered, or null for a single map.
+	 * @return string
+	 */
 	private static function embed_url( $url, $item, $gallery ) {
 		if ( 'trip' !== $item['type'] ) {
 			return $url;
@@ -572,6 +812,13 @@ final class Gallery_For_SpotWalla {
 		return null === $fill || '' === $fill ? $url : add_query_arg( 'fillFactor', $fill, $url );
 	}
 
+	/**
+	 * Renders one map: optional title link and description, then a lazy-loaded iframe.
+	 *
+	 * @param array      $item    Map row.
+	 * @param array|null $gallery Gallery being rendered, or null for a single map.
+	 * @return string HTML, or an empty string if the stored URL is no longer valid.
+	 */
 	private static function card( $item, $gallery = null ) {
 		$url = self::public_url( $item['url'] );
 		if ( ! $url ) {
@@ -590,6 +837,14 @@ final class Gallery_For_SpotWalla {
 			'</article>';
 	}
 
+	/**
+	 * Shortcode callback for [gallery_for_spotwalla] and the legacy [spotwalla_gallery].
+	 *
+	 * Renders a single map, or a gallery with each of its maps in creation order.
+	 *
+	 * @param array|string $attributes Shortcode attributes; "id" is the map or gallery ID.
+	 * @return string HTML, or an empty string for a missing or invalid ID.
+	 */
 	public static function shortcode( $attributes ) {
 		$attributes = shortcode_atts( array( 'id' => 0 ), $attributes, 'gallery_for_spotwalla' );
 		if ( ! is_scalar( $attributes['id'] ) || ! preg_match( '/^[1-9][0-9]*$/', (string) $attributes['id'] ) ) {
