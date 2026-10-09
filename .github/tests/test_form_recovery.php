@@ -93,19 +93,17 @@ try {
 	gfsw_expect( isset( $query['sw_form'] ) && 'maps' === $query['tab'], 'Invalid URL must return to Maps with a recovery token.' );
 	gfsw_expect( ! isset( $query['url'] ), 'Submitted data must not be in the redirect URL.' );
 	gfsw_expect( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ) === $before + 1, 'Validation must not save a map.' );
-	$key_method = new ReflectionMethod( 'Gallery_For_SpotWalla', 'form_key' );
-	$key_method->setAccessible( true );
-	$key = $key_method->invoke( null, $query['sw_form'] );
+	$key = GFSW_Form_Recovery::key( $query['sw_form'] );
 	$original_cookie = isset( $_COOKIE[ LOGGED_IN_COOKIE ] ) ? $_COOKIE[ LOGGED_IN_COOKIE ] : null;
 	$_COOKIE[ LOGGED_IN_COOKIE ] = 'test|9999999999|different-session|test';
-	gfsw_expect( false === get_transient( $key_method->invoke( null, $query['sw_form'] ) ), 'Another login session must not access recovery data.' );
+	gfsw_expect( false === get_transient( GFSW_Form_Recovery::key( $query['sw_form'] ) ), 'Another login session must not access recovery data.' );
 	if ( null === $original_cookie ) {
 		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
 	} else {
 		$_COOKIE[ LOGGED_IN_COOKIE ] = $original_cookie;
 	}
 	wp_set_current_user( 999999 );
-	gfsw_expect( false === get_transient( $key_method->invoke( null, $query['sw_form'] ) ), 'Another user must not access recovery data.' );
+	gfsw_expect( false === get_transient( GFSW_Form_Recovery::key( $query['sw_form'] ) ), 'Another user must not access recovery data.' );
 	wp_set_current_user( $user_id );
 	$html = gfsw_render( $query );
 	foreach ( array( esc_attr( $base['title'] ), esc_attr( $base['url'] ), esc_textarea( $base['description'] ), 'value="930"', 'value="670"', 'value="#123456"', 'value="#abcdef"', 'sw-error-url', 'aria-describedby="sw-error-url"', 'Enter an HTTPS public SpotWalla link' ) as $expected ) {
@@ -128,7 +126,7 @@ try {
 	$html = gfsw_render( gfsw_submit( array_merge( $base, array( 'title' => str_repeat( "\xc3\xa9", 128 ), 'type' => 'unknown' ) ) ) );
 	gfsw_expect( false !== strpos( $html, 'Shorten the title to 255 bytes' ) && false !== strpos( $html, 'sw-error-type' ), 'Multibyte title limits and invalid types must show field errors.' );
 	$expired = gfsw_submit( $base );
-	delete_transient( $key_method->invoke( null, $expired['sw_form'] ) );
+	delete_transient( GFSW_Form_Recovery::key( $expired['sw_form'] ) );
 	gfsw_expect( false !== strpos( gfsw_render( $expired ), 'The form could not be recovered.' ), 'Expired drafts must not claim to retain entries.' );
 	$valid = array_merge( $base, array( 'url' => 'https://spotwalla.com/trip/view?id=123' ) );
 	$query = gfsw_submit( $valid );

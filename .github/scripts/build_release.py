@@ -11,6 +11,16 @@ ROOT = Path(__file__).resolve().parents[2]
 PLUGIN = "gallery-for-spotwalla"
 FILES = (
     "gallery-for-spotwalla.php",
+    "includes/class-gfsw-config.php",
+    "includes/interface-gfsw-item-reader.php",
+    "includes/interface-gfsw-store.php",
+    "includes/class-gfsw-wpdb-store.php",
+    "includes/class-gfsw-validator.php",
+    "includes/class-gfsw-form-recovery.php",
+    "includes/class-gfsw-lifecycle.php",
+    "includes/class-gfsw-admin.php",
+    "includes/class-gfsw-admin-page.php",
+    "includes/class-gfsw-renderer.php",
     "readme.txt",
     "README.md",
     "LICENSE",

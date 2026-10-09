@@ -33,7 +33,10 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-      - run: php -l gallery-for-spotwalla.php
+      - name: Check all runtime and test PHP syntax
+        run: |
+          php -l gallery-for-spotwalla.php
+          find includes .github/tests -name '*.php' -print0 | xargs -0 -n 1 php -l
 
   security:
     name: CVE, secrets, and PHP security
@@ -67,7 +70,7 @@ jobs:
           "$RUNNER_TEMP/semgrep/bin/semgrep" scan \
             --config p/php --error --strict --metrics off \
             --disable-version-check --json --output reports/semgrep.json \
-            gallery-for-spotwalla.php
+            gallery-for-spotwalla.php includes/
       - name: Scan common PHP exploit patterns
         if: ${{ !cancelled() }}
         run: |
@@ -75,7 +78,7 @@ jobs:
           "$RUNNER_TEMP/semgrep/bin/semgrep" scan \
             --config p/security-audit --error --strict --metrics off \
             --disable-version-check --json --output reports/semgrep-security-audit.json \
-            gallery-for-spotwalla.php
+            gallery-for-spotwalla.php includes/
       - name: Install Gitleaks
         if: ${{ !cancelled() }}
         run: |

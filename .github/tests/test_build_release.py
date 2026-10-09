@@ -1,5 +1,6 @@
 import hashlib
 import importlib.util
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -58,6 +59,20 @@ class BuildReleaseTests(unittest.TestCase):
         (self.root / "LICENSE").unlink()
         with self.assertRaises(FileNotFoundError):
             release.build()
+
+    def test_every_runtime_php_file_is_explicitly_packaged(self):
+        repo = Path(__file__).resolve().parents[2]
+        runtime = {
+            path.relative_to(repo).as_posix()
+            for path in (repo / "includes").glob("*.php")
+        }
+        self.assertTrue(runtime)
+        self.assertEqual(
+            runtime, {name for name in release.FILES if name.startswith("includes/")}
+        )
+        source = (repo / release.FILES[0]).read_text(encoding="utf-8")
+        required = set(re.findall(r"require_once __DIR__ \. '/([^']+)';", source))
+        self.assertEqual(runtime, required)
 
 
 if __name__ == "__main__":

@@ -2,22 +2,22 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Gallery for SpotWalla 1.0.7\n"
+"Project-Id-Version: Gallery for SpotWalla 1.0.8\n"
 "Report-Msgid-Bugs-To: https://github.com/oconnoradv/SpotwallaGallary/issues\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-09T17:27:55+00:00\n"
+"POT-Creation-Date: 2026-10-09T22:11:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gallery-for-spotwalla\n"
 
 #. Plugin Name of the plugin
 #: gallery-for-spotwalla.php
-#: gallery-for-spotwalla.php:303
-#: gallery-for-spotwalla.php:337
+#: includes/class-gfsw-admin-page.php:37
+#: includes/class-gfsw-admin-page.php:71
 msgid "Gallery for SpotWalla"
 msgstr ""
 
@@ -36,465 +36,465 @@ msgstr ""
 msgid "Brian O'Connor"
 msgstr ""
 
-#: gallery-for-spotwalla.php:109
-msgid "Please activate Gallery for SpotWalla separately on each site, not network-wide."
-msgstr ""
-
-#: gallery-for-spotwalla.php:303
+#: includes/class-gfsw-admin-page.php:37
 msgid "Spotwalla Gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:339
+#: includes/class-gfsw-admin-page.php:73
 msgid "an O'ConnorADV project"
 msgstr ""
 
 #. translators: %s: installed plugin version.
-#: gallery-for-spotwalla.php:340
+#: includes/class-gfsw-admin-page.php:74
 #, php-format
 msgid "Version %s"
 msgstr ""
 
-#: gallery-for-spotwalla.php:363
+#: includes/class-gfsw-admin-page.php:97
 msgid "The old \"SpotWalla Gallery\" plugin is still active. Gallery for SpotWalla replaces it and has moved its maps and galleries into its own tables, so changes made in the old plugin are no longer shown. Deactivate and delete \"SpotWalla Gallery\"."
 msgstr ""
 
-#: gallery-for-spotwalla.php:374
-msgid "You are not allowed to manage SpotWalla galleries."
-msgstr ""
-
-#: gallery-for-spotwalla.php:474
-msgid "The form could not be preserved. Use your browser Back button to recover your entries and try again."
-msgstr ""
-
-#: gallery-for-spotwalla.php:592
-msgid "Choose Trip, Track, or Retrospective for a map."
-msgstr ""
-
-#: gallery-for-spotwalla.php:595
-msgid "Enter a title."
-msgstr ""
-
-#: gallery-for-spotwalla.php:597
-msgid "Shorten the title to 255 bytes or fewer. Accented characters and emoji may use more than one byte."
-msgstr ""
-
-#: gallery-for-spotwalla.php:600
-msgid "Enter an HTTPS public SpotWalla link on spotwalla.com, www.spotwalla.com, or new.spotwalla.com. Do not include login credentials or a non-default port."
-msgstr ""
-
-#: gallery-for-spotwalla.php:604
-msgid "This item no longer exists. Your entries have been kept so you can add it again."
-msgstr ""
-
-#: gallery-for-spotwalla.php:607
-msgid "An existing map or gallery cannot change type. Restore its original type or create a new item."
-msgstr ""
-
-#: gallery-for-spotwalla.php:615
-msgid "Choose galleries from the available list."
-msgstr ""
-
-#: gallery-for-spotwalla.php:618
-msgid "Choose a valid map title visibility setting."
-msgstr ""
-
-#: gallery-for-spotwalla.php:621
-msgid "Choose a valid map description visibility setting."
-msgstr ""
-
-#: gallery-for-spotwalla.php:624
-msgid "Choose a density from the available options, or use the SpotWalla default."
-msgstr ""
-
-#: gallery-for-spotwalla.php:631
-msgid "One or more selected galleries no longer exist. Update your selection from the available galleries."
-msgstr ""
-
-#: gallery-for-spotwalla.php:655
-msgid "The database could not save this item. Your entries have been kept. Try saving again; if the problem continues, contact your site administrator."
-msgstr ""
-
-#: gallery-for-spotwalla.php:660
-msgid "The map was saved, but its gallery memberships could not be updated. Check your selections and save again."
-msgstr ""
-
-#: gallery-for-spotwalla.php:664
-msgid "The map was saved, but some gallery memberships could not be saved. Check your selections and save again."
-msgstr ""
-
-#: gallery-for-spotwalla.php:721
-#: gallery-for-spotwalla.php:752
+#: includes/class-gfsw-admin-page.php:134
+#: includes/class-gfsw-admin-page.php:165
 msgid "Use each map's setting"
 msgstr ""
 
-#: gallery-for-spotwalla.php:722
+#: includes/class-gfsw-admin-page.php:135
 msgid "Show for all maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:723
+#: includes/class-gfsw-admin-page.php:136
 msgid "Hide for all maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:746
+#: includes/class-gfsw-admin-page.php:159
 msgid "Map density in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:746
+#: includes/class-gfsw-admin-page.php:159
 msgid "Density/Fill percentage"
 msgstr ""
 
-#: gallery-for-spotwalla.php:752
+#: includes/class-gfsw-admin-page.php:165
 msgid "SpotWalla trip setting"
 msgstr ""
 
-#: gallery-for-spotwalla.php:756
+#: includes/class-gfsw-admin-page.php:169
 msgid "None"
 msgstr ""
 
 #. translators: %s: the percentage "100%".
-#: gallery-for-spotwalla.php:759
+#: includes/class-gfsw-admin-page.php:172
 #, php-format
 msgid "All (%s)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:764
+#: includes/class-gfsw-admin-page.php:177
 msgid "Overrides the density of every trip map shown in this gallery."
 msgstr ""
 
-#: gallery-for-spotwalla.php:764
+#: includes/class-gfsw-admin-page.php:177
 msgid "Sets SpotWalla's Density/Fill Percentage (number of locations shown). Applies to trips only."
 msgstr ""
 
-#: gallery-for-spotwalla.php:776
+#: includes/class-gfsw-admin-page.php:189
 msgid "Track"
 msgstr ""
 
-#: gallery-for-spotwalla.php:777
+#: includes/class-gfsw-admin-page.php:190
 msgid "Trip"
 msgstr ""
 
-#: gallery-for-spotwalla.php:778
+#: includes/class-gfsw-admin-page.php:191
 msgid "Retrospective"
 msgstr ""
 
-#: gallery-for-spotwalla.php:779
+#: includes/class-gfsw-admin-page.php:192
 msgid "Gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:790
+#: includes/class-gfsw-admin-page.php:203
 msgid "(opens in a new tab)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:801
-#: gallery-for-spotwalla.php:1069
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:214
+#: includes/class-gfsw-admin-page.php:478
+#: includes/class-gfsw-admin-page.php:480
 msgid "Maps"
 msgstr ""
 
-#: gallery-for-spotwalla.php:802
-#: gallery-for-spotwalla.php:1035
-#: gallery-for-spotwalla.php:1069
+#: includes/class-gfsw-admin-page.php:215
+#: includes/class-gfsw-admin-page.php:444
+#: includes/class-gfsw-admin-page.php:478
 msgid "Galleries"
 msgstr ""
 
-#: gallery-for-spotwalla.php:803
-#: gallery-for-spotwalla.php:840
+#: includes/class-gfsw-admin-page.php:216
+#: includes/class-gfsw-admin-page.php:253
 msgid "About"
 msgstr ""
 
-#: gallery-for-spotwalla.php:806
+#: includes/class-gfsw-admin-page.php:219
 msgid "Gallery for SpotWalla sections"
 msgstr ""
 
-#: gallery-for-spotwalla.php:823
+#: includes/class-gfsw-admin-page.php:236
 msgid "Repository"
 msgstr ""
 
-#: gallery-for-spotwalla.php:824
+#: includes/class-gfsw-admin-page.php:237
 msgid "README"
 msgstr ""
 
-#: gallery-for-spotwalla.php:825
+#: includes/class-gfsw-admin-page.php:238
 msgid "License (GPLv2 or later)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:826
+#: includes/class-gfsw-admin-page.php:239
 msgid "SpotWalla terms and privacy"
 msgstr ""
 
 #. translators: 1: plugin version, 2: WordPress version, 3: PHP version.
-#: gallery-for-spotwalla.php:829
+#: includes/class-gfsw-admin-page.php:242
 #, php-format
 msgid "Plugin %1$s, WordPress %2$s, PHP %3$s"
 msgstr ""
 
-#: gallery-for-spotwalla.php:841
+#: includes/class-gfsw-admin-page.php:254
 msgid "Gallery for SpotWalla manages and embeds public SpotWalla tracks, trips, retrospectives, and galleries. Embedded maps are loaded from spotwalla.com in each visitor's browser and are subject to SpotWalla's terms and privacy policy."
 msgstr ""
 
-#: gallery-for-spotwalla.php:842
+#: includes/class-gfsw-admin-page.php:255
 msgid "<strong>Disclaimer:</strong> Gallery for SpotWalla is an independent project. It is <strong>not</strong> affiliated with, endorsed by, sponsored by, or approved by SpotWalla or the SpotWalla team. SpotWalla is a trademark of its respective owner and is used here only to describe compatibility. Direct questions about the plugin to this project, not to SpotWalla."
 msgstr ""
 
-#: gallery-for-spotwalla.php:844
+#: includes/class-gfsw-admin-page.php:257
 msgid "Version"
 msgstr ""
 
-#: gallery-for-spotwalla.php:849
+#: includes/class-gfsw-admin-page.php:262
 msgid "The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder."
 msgstr ""
 
-#: gallery-for-spotwalla.php:850
+#: includes/class-gfsw-admin-page.php:263
 msgid "Recommended Plugins"
 msgstr ""
 
 #. translators: 1: link to the Motorcycle Rally Scoring App project, 2: "(opens in a new tab)" text for screen readers.
-#: gallery-for-spotwalla.php:854
+#: includes/class-gfsw-admin-page.php:267
 #, php-format
 msgid "For motorcycle rally event management and scoring, see the related <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">Motorcycle Rally Scoring App plugin</a>, a separate, optional O'ConnorADV project%2$s."
 msgstr ""
 
-#: gallery-for-spotwalla.php:857
+#: includes/class-gfsw-admin-page.php:270
 msgid "Reporting issues"
 msgstr ""
 
 #. translators: 1: link to the GitHub issue list, 2: "(opens in a new tab)" text for screen readers.
-#: gallery-for-spotwalla.php:862
+#: includes/class-gfsw-admin-page.php:275
 #, php-format
 msgid "Search <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">existing issues%2$s</a> to see whether the problem is already reported."
 msgstr ""
 
 #. translators: 1: link to the new GitHub issue form, 2: "(opens in a new tab)" text for screen readers.
-#: gallery-for-spotwalla.php:868
+#: includes/class-gfsw-admin-page.php:281
 #, php-format
 msgid "If not, sign in to GitHub and <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">open a new issue%2$s</a> with a short, descriptive title."
 msgstr ""
 
-#: gallery-for-spotwalla.php:871
+#: includes/class-gfsw-admin-page.php:284
 msgid "Describe what you expected and what happened, the steps to reproduce it, the map type (trip, track, or retrospective), and any error messages or screenshots."
 msgstr ""
 
 #. translators: %s: plugin, WordPress, and PHP versions.
-#: gallery-for-spotwalla.php:875
+#: includes/class-gfsw-admin-page.php:288
 #, php-format
 msgid "Include your environment: %s."
 msgstr ""
 
-#: gallery-for-spotwalla.php:878
+#: includes/class-gfsw-admin-page.php:291
 msgid "Do not include passwords, private SpotWalla links, or other personal data. Report security vulnerabilities privately to the repository owner rather than in a public issue."
 msgstr ""
 
-#: gallery-for-spotwalla.php:922
+#: includes/class-gfsw-admin-page.php:331
 msgid "The recovered form has expired or was already opened. Please enter your details again."
 msgstr ""
 
-#: gallery-for-spotwalla.php:954
+#: includes/class-gfsw-admin-page.php:363
 msgid "Edit gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:954
+#: includes/class-gfsw-admin-page.php:363
 msgid "Add gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:955
+#: includes/class-gfsw-admin-page.php:364
 msgid "Save gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:957
+#: includes/class-gfsw-admin-page.php:366
 msgid "Edit map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:957
+#: includes/class-gfsw-admin-page.php:366
 msgid "Add map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:958
+#: includes/class-gfsw-admin-page.php:367
 msgid "Save map"
 msgstr ""
 
-#: gallery-for-spotwalla.php:961
+#: includes/class-gfsw-admin-page.php:370
 msgid "Saved."
 msgstr ""
 
-#: gallery-for-spotwalla.php:962
+#: includes/class-gfsw-admin-page.php:371
 msgid "Deleted. Maps in a deleted gallery remain available individually."
 msgstr ""
 
-#: gallery-for-spotwalla.php:962
+#: includes/class-gfsw-admin-page.php:371
 msgid "Deleted."
 msgstr ""
 
-#: gallery-for-spotwalla.php:963
+#: includes/class-gfsw-admin-page.php:372
 msgid "Not saved. Supply a title (maximum 255 bytes), valid options and galleries, and an HTTPS SpotWalla public URL for maps. Existing types cannot be changed."
 msgstr ""
 
-#: gallery-for-spotwalla.php:964
+#: includes/class-gfsw-admin-page.php:373
 msgid "A database error occurred. Please try again."
 msgstr ""
 
-#: gallery-for-spotwalla.php:973
+#: includes/class-gfsw-admin-page.php:382
 msgid "Review the errors below. Your submitted entries have been kept."
 msgstr ""
 
-#: gallery-for-spotwalla.php:973
+#: includes/class-gfsw-admin-page.php:382
 msgid "The form could not be recovered."
 msgstr ""
 
-#: gallery-for-spotwalla.php:986
+#: includes/class-gfsw-admin-page.php:395
 msgid "Create galleries here, then add maps to them from the Maps tab. A gallery can override its maps' title and description visibility."
 msgstr ""
 
-#: gallery-for-spotwalla.php:986
+#: includes/class-gfsw-admin-page.php:395
 msgid "Add tracks, trips, and retrospectives, and assign each map to any number of galleries."
 msgstr ""
 
 #. translators: 1: example shortcode, 2: shortcode name used by earlier versions.
-#: gallery-for-spotwalla.php:989
+#: includes/class-gfsw-admin-page.php:398
 #, php-format
 msgid "Embed any map or gallery with %1$s. Existing %2$s shortcodes continue to work."
 msgstr ""
 
-#: gallery-for-spotwalla.php:999
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:408
+#: includes/class-gfsw-admin-page.php:480
 msgid "Title"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1001
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:410
+#: includes/class-gfsw-admin-page.php:480
 msgid "Type"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1018
+#: includes/class-gfsw-admin-page.php:427
 msgid "Description"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1024
+#: includes/class-gfsw-admin-page.php:433
 msgid "Map titles in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1025
+#: includes/class-gfsw-admin-page.php:434
 msgid "Map descriptions in this gallery"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1028
+#: includes/class-gfsw-admin-page.php:437
 msgid "Public SpotWalla URL"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1028
+#: includes/class-gfsw-admin-page.php:437
 msgid "Use the HTTPS public or embed link supplied by SpotWalla."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1029
+#: includes/class-gfsw-admin-page.php:438
 msgid "Visibility"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1030
+#: includes/class-gfsw-admin-page.php:439
 msgid "Show title"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1031
+#: includes/class-gfsw-admin-page.php:440
 msgid "Show description"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1032
+#: includes/class-gfsw-admin-page.php:441
 msgid "A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla."
 msgstr ""
 
 #. translators: %d: the ID of a gallery that no longer exists.
-#: gallery-for-spotwalla.php:1043
+#: includes/class-gfsw-admin-page.php:452
 #, php-format
 msgid "Unavailable gallery (#%d) - uncheck this selection."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1049
-#: gallery-for-spotwalla.php:1092
+#: includes/class-gfsw-admin-page.php:458
+#: includes/class-gfsw-admin-page.php:501
 msgid "No galleries yet."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1049
+#: includes/class-gfsw-admin-page.php:458
 msgid "Create one on the Galleries tab."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1051
+#: includes/class-gfsw-admin-page.php:460
 msgid "Select any number of galleries. Galleries cannot be nested."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1055
+#: includes/class-gfsw-admin-page.php:464
 msgid "Description appearance"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1055
+#: includes/class-gfsw-admin-page.php:464
 msgid "Inherit site theme (ignore custom colors and dimensions)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1056
+#: includes/class-gfsw-admin-page.php:465
 msgid "Description background color"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1057
+#: includes/class-gfsw-admin-page.php:466
 msgid "Description text and link color"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1058
+#: includes/class-gfsw-admin-page.php:467
 msgid "Custom map dimensions"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1059
+#: includes/class-gfsw-admin-page.php:468
 msgid "Width (px)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1061
+#: includes/class-gfsw-admin-page.php:470
 msgid "Map height (px)"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1063
+#: includes/class-gfsw-admin-page.php:472
 msgid "Widths shrink to fit small screens. Colors apply to the card, not the remote map."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1067
+#: includes/class-gfsw-admin-page.php:476
 msgid "Cancel editing"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:480
 msgid "ID"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:480
 msgid "Gallery IDs"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:480
 msgid "Shortcode"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1071
+#: includes/class-gfsw-admin-page.php:480
 msgid "Actions"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1083
+#: includes/class-gfsw-admin-page.php:492
 msgid "Edit"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1087
+#: includes/class-gfsw-admin-page.php:496
 msgid "Delete"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1092
+#: includes/class-gfsw-admin-page.php:501
 msgid "No maps yet."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1095
+#: includes/class-gfsw-admin-page.php:504
 msgid "Data retention"
 msgstr ""
 
-#: gallery-for-spotwalla.php:1100
+#: includes/class-gfsw-admin-page.php:509
 msgid "Permanently delete all plugin tables, settings, maps, and galleries on deactivation."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1101
+#: includes/class-gfsw-admin-page.php:510
 msgid "Unchecked by default: retain data for reactivation. Deletion cannot be undone; embedded shortcodes will have no content."
 msgstr ""
 
-#: gallery-for-spotwalla.php:1102
+#: includes/class-gfsw-admin-page.php:511
 msgid "Save retention setting"
+msgstr ""
+
+#: includes/class-gfsw-admin.php:36
+msgid "You are not allowed to manage SpotWalla galleries."
+msgstr ""
+
+#: includes/class-gfsw-admin.php:126
+msgid "The form could not be preserved. Use your browser Back button to recover your entries and try again."
+msgstr ""
+
+#: includes/class-gfsw-admin.php:157
+msgid "This item no longer exists. Your entries have been kept so you can add it again."
+msgstr ""
+
+#: includes/class-gfsw-admin.php:167
+msgid "The database could not save this item. Your entries have been kept. Try saving again; if the problem continues, contact your site administrator."
+msgstr ""
+
+#: includes/class-gfsw-admin.php:172
+msgid "The map was saved, but its gallery memberships could not be updated. Check your selections and save again."
+msgstr ""
+
+#: includes/class-gfsw-admin.php:176
+msgid "The map was saved, but some gallery memberships could not be saved. Check your selections and save again."
+msgstr ""
+
+#: includes/class-gfsw-lifecycle.php:66
+msgid "Please activate Gallery for SpotWalla separately on each site, not network-wide."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:32
+msgid "Choose Trip, Track, or Retrospective for a map."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:35
+msgid "Enter a title."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:37
+msgid "Shorten the title to 255 bytes or fewer. Accented characters and emoji may use more than one byte."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:40
+msgid "Enter an HTTPS public SpotWalla link on spotwalla.com, www.spotwalla.com, or new.spotwalla.com. Do not include login credentials or a non-default port."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:43
+msgid "An existing map or gallery cannot change type. Restore its original type or create a new item."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:46
+msgid "Choose galleries from the available list."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:48
+msgid "One or more selected galleries no longer exist. Update your selection from the available galleries."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:51
+msgid "Choose a valid map title visibility setting."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:54
+msgid "Choose a valid map description visibility setting."
+msgstr ""
+
+#: includes/class-gfsw-validator.php:57
+msgid "Choose a density from the available options, or use the SpotWalla default."
 msgstr ""

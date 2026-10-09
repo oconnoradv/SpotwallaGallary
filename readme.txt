@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
 
+= 1.0.8 =
+* Separates lifecycle, persistence, validation, form recovery, admin requests, admin presentation, and shortcode rendering into focused components with injectable storage contracts.
+* Retains existing shortcodes, settings, database tables, migrations, and form behavior.
+
 = 1.0.7 =
 * Failed map and gallery saves return to the form with the submitted entries, highlighted invalid fields, and specific error messages.
 
@@ -102,6 +106,9 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stab
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.8 =
+Internal architecture refactor. Existing content, settings, and shortcodes are retained.
 
 = 1.0.7 =
 Improves form error recovery without changing saved map data.
