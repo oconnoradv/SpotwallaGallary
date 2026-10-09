@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
 
+= 1.0.9 =
+* Release publication now requires no open Dependabot alerts and a clean CodeQL analysis of the exact release commit.
+* Missing security credentials, scanner failures, and analysis timeouts block publication.
+
 = 1.0.8 =
 * Separates lifecycle, persistence, validation, form recovery, admin requests, admin presentation, and shortcode rendering into focused components with injectable storage contracts.
 * Retains existing shortcodes, settings, database tables, migrations, and form behavior.
@@ -106,6 +110,9 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stab
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.9 =
+Adds blocking Dependabot and CodeQL checks to release publication. Plugin behavior and saved content are unchanged.
 
 = 1.0.8 =
 Internal architecture refactor. Existing content, settings, and shortcodes are retained.

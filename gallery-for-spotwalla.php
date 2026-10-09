@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.8
+ * Version: 1.0.9
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
