@@ -1019,7 +1019,7 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Renders one map: optional title link and description, then a lazy-loaded iframe.
+	 * Renders one map and its sandboxed, lazy-loaded SpotWalla iframe.
 	 *
 	 * @param array      $item    Map row.
 	 * @param array|null $gallery Gallery being rendered, or null for a single map.
@@ -1039,7 +1039,7 @@ final class Gallery_For_SpotWalla {
 		if ( self::visible( $item, $gallery, 'description' ) ) {
 			$html .= '<p>' . nl2br( esc_html( $item['description'] ) ) . '</p>';
 		}
-		return $html . '<iframe src="' . esc_url( self::embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
+		return $html . '<iframe src="' . esc_url( self::embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
 			'</article>';
 	}
 
