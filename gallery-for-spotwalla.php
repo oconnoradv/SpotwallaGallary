@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -322,12 +322,16 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	private static function header() {
+		$plugin = get_file_data( __FILE__, array( 'version' => 'Version' ) );
 		?>
 		<div class="gfsw-header">
 			<img src="<?php echo esc_url( plugins_url( 'images/logo-256x256.jpg', __FILE__ ) ); ?>" width="128" height="128" alt="" />
 			<div>
 				<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
-				<p class="gfsw-tagline"><?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?></p>
+				<p class="gfsw-tagline">
+					<?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?>
+					<span class="gfsw-version"><?php /* translators: %s: installed plugin version. */ echo esc_html( sprintf( __( 'Version %s', 'gallery-for-spotwalla' ), $plugin['version'] ) ); ?></span>
+				</p>
 			</div>
 		</div>
 		<hr class="wp-header-end" />
@@ -710,7 +714,7 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Outputs the About tab: version, disclaimer, links, license, and issue-reporting steps.
+	 * Outputs the About tab: version, disclaimer, links, license, recommendations, and issue-reporting steps.
 	 *
 	 * @return void
 	 */
@@ -745,6 +749,13 @@ final class Gallery_For_SpotWalla {
 				<?php endforeach; ?>
 			</table>
 			<p><?php echo wp_kses( __( "The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder.", 'gallery-for-spotwalla' ), $allowed ); ?></p>
+			<h2><?php esc_html_e( 'Recommended Plugins', 'gallery-for-spotwalla' ); ?></h2>
+			<p>
+				<?php
+				/* translators: 1: link to the Motorcycle Rally Scoring App project, 2: "(opens in a new tab)" text for screen readers. */
+				echo wp_kses( sprintf( __( 'For motorcycle rally event management and scoring, see the related <a href="%1$s" target="_blank" rel="noopener noreferrer">Motorcycle Rally Scoring App plugin</a>, a separate, optional O\'ConnorADV project%2$s.', 'gallery-for-spotwalla' ), esc_url( 'https://github.com/oconnoradv/MotorcycleRallyScoringApp' ), self::new_tab_text() ), $allowed );
+				?>
+			</p>
 			<h2><?php esc_html_e( 'Reporting issues', 'gallery-for-spotwalla' ); ?></h2>
 			<ol>
 				<li>
@@ -1008,7 +1019,7 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Renders one map: optional title link and description, then a lazy-loaded iframe.
+	 * Renders one map and its sandboxed, lazy-loaded SpotWalla iframe.
 	 *
 	 * @param array      $item    Map row.
 	 * @param array|null $gallery Gallery being rendered, or null for a single map.
@@ -1028,7 +1039,7 @@ final class Gallery_For_SpotWalla {
 		if ( self::visible( $item, $gallery, 'description' ) ) {
 			$html .= '<p>' . nl2br( esc_html( $item['description'] ) ) . '</p>';
 		}
-		return $html . '<iframe src="' . esc_url( self::embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
+		return $html . '<iframe src="' . esc_url( self::embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
 			'</article>';
 	}
 

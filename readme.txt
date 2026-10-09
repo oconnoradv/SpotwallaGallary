@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,8 +31,8 @@ SpotWalla does not allow the map layer (streets, terrain, satellite) or picture 
 
 This plugin embeds maps from SpotWalla (https://spotwalla.com), an online personal location management service, to display the trips, tracks, and retrospectives you add.
 
-* What is sent and when: when a visitor views a page containing the shortcode, their browser loads each saved public SpotWalla link (with the selected density setting for trips) in an iframe directly from spotwalla.com. SpotWalla receives the visitor's IP address, browser information, and the requested map link, and may set cookies and use analytics as described in its policy. The plugin sends no referrer and no other site or visitor data, and it makes no server-side requests to SpotWalla.
-* Only HTTPS links on spotwalla.com, www.spotwalla.com, and new.spotwalla.com are accepted.
+* What is sent and when: when a visitor views a page containing the shortcode, their browser loads each saved public SpotWalla link (with the selected density setting for trips) in a sandboxed iframe directly from SpotWalla. SpotWalla receives the visitor's IP address, browser information, and the requested map link, and may set cookies and use analytics as described in its policy. The plugin sends no referrer and no other site or visitor data, and it makes no server-side requests to SpotWalla.
+* Only HTTPS links on spotwalla.com, www.spotwalla.com, and new.spotwalla.com are accepted, and the host is checked again when the map is rendered. The sandbox allows scripts needed to display the map in an isolated browser origin, but does not allow the frame to access the WordPress page, submit forms, open popups, download files, or navigate the top-level page. The plugin cannot scan remote SpotWalla content for malware or control resources SpotWalla itself loads, such as map tiles.
 * SpotWalla Terms of Service and Privacy Policy: https://spotwalla.com/tos
 
 == Installation ==
@@ -65,7 +65,12 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
-Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 is the first stable release.
+Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
+
+= 1.0.6 =
+* Added an optional Recommended Plugins section on the About page linking to the Motorcycle Rally Scoring App project.
+* The admin header shows the installed plugin version next to the project byline.
+* Maps render in a sandboxed iframe isolated from the WordPress page.
 
 = 1.0.5 =
 * First stable release.
@@ -94,6 +99,9 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 is the first stabl
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+Adds an optional related-plugin link to the About page and isolates embedded maps in a sandboxed iframe. No data changes.
 
 = 1.0.5 =
 First stable release. The page header shows the plugin name again. No data changes.
