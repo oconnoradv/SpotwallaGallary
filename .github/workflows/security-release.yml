@@ -132,10 +132,29 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  release-security:
+    name: Dependabot and exact-commit CodeQL release gate
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Require clean Dependabot alerts and CodeQL release-commit analysis
+        env:
+          RELEASE_SECURITY_TOKEN: ${{ secrets.RELEASE_SECURITY_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/check_release_security.py
+
   release:
     name: Publish GitHub release
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
-    needs: build
+    needs: [build, release-security]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
