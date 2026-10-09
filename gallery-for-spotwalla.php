@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.6
+ * Version: 1.0.7
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -32,6 +32,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * [gallery_for_spotwalla] shortcode. All members are static; the class is never instantiated.
  */
 final class Gallery_For_SpotWalla {
+	/**
+	 * Field errors for the form currently being rendered.
+	 *
+	 * @var array
+	 */
+	private static $form_errors = array();
 	/**
 	 * Plugin slug, used as the admin page slug.
 	 */
@@ -310,6 +316,7 @@ final class Gallery_For_SpotWalla {
 			. '.gfsw-header img{flex:none;width:128px;height:128px;border-radius:4px}'
 			. '.wrap .gfsw-header h1{margin:0;padding:0;font-size:2em;line-height:1.2}'
 			. '.gfsw-header .gfsw-tagline{margin:4px 0 0;font-size:14px;font-style:italic;color:#646970}'
+			. '.gfsw-form [aria-invalid="true"]{border:2px solid #b32d2e}.gfsw-field-error{color:#b32d2e;font-weight:600}'
 			. '@media screen and (max-width:600px){.gfsw-header img{width:64px;height:64px}.wrap .gfsw-header h1{font-size:1.5em}}';
 		wp_register_style( 'gallery-for-spotwalla-admin', false, array(), $plugin['version'] );
 		wp_enqueue_style( 'gallery-for-spotwalla-admin' );
@@ -434,6 +441,67 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
+	 * Builds a short-lived form recovery key scoped to this user and login session.
+	 *
+	 * @param string $token Random recovery token.
+	 * @return string Transient key.
+	 */
+	private static function form_key( $token ) {
+		return 'gfsw_form_' . hash( 'sha256', get_current_user_id() . ':' . wp_get_session_token() . ':' . $token );
+	}
+
+	/**
+	 * Preserves the submitted form and redirects to field-specific error feedback.
+	 *
+	 * Called only after authorization. Values are escaped when redisplayed, not
+	 * sanitized here, so users can correct the original input without retyping.
+	 *
+	 * @param array  $errors Field names mapped to error messages.
+	 * @param string $tab    Form tab.
+	 * @param int    $id     Existing item ID, including an item saved before a membership error.
+	 * @return void
+	 */
+	private static function save_error( $errors, $tab, $id ) {
+		$item = array( 'id' => $id );
+		foreach ( array( 'type', 'title', 'description', 'url', 'member_title', 'member_description', 'fill_factor', 'background', 'color', 'width', 'height' ) as $field ) {
+			$item[ $field ] = self::posted( $field );
+		}
+		foreach ( array( 'show_title', 'show_description', 'inherit_theme' ) as $field ) {
+			$item[ $field ] = '1' === self::posted( $field ) ? 1 : 0;
+		}
+		$token = wp_generate_password( 32, false, false );
+		if ( ! set_transient( self::form_key( $token ), array( 'item' => $item, 'gallery_ids' => self::posted_ids( 'gallery_ids' ) ?: array(), 'errors' => $errors ), 10 * MINUTE_IN_SECONDS ) ) {
+			wp_die( esc_html__( 'The form could not be preserved. Use your browser Back button to recover your entries and try again.', 'gallery-for-spotwalla' ) );
+		}
+		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG, 'tab' => $tab, 'sw_form' => $token ), admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Outputs accessibility attributes linking a field to its inline error.
+	 *
+	 * @param string $field Field name.
+	 * @return void
+	 */
+	private static function error_attributes( $field ) {
+		if ( isset( self::$form_errors[ $field ] ) ) {
+			echo ' aria-invalid="true" aria-describedby="' . esc_attr( 'sw-error-' . $field ) . '"';
+		}
+	}
+
+	/**
+	 * Outputs a field's corrective error text, if present.
+	 *
+	 * @param string $field Field name.
+	 * @return void
+	 */
+	private static function field_error( $field ) {
+		if ( isset( self::$form_errors[ $field ] ) ) {
+			echo '<p class="gfsw-field-error" id="' . esc_attr( 'sw-error-' . $field ) . '">' . esc_html( self::$form_errors[ $field ] ) . '</p>';
+		}
+	}
+
+	/**
 	 * Loads a map or gallery by ID.
 	 *
 	 * @param int $id Item ID.
@@ -519,28 +587,52 @@ final class Gallery_For_SpotWalla {
 		$tab        = self::tab_for( $type );
 		$title      = sanitize_text_field( self::posted( 'title' ) );
 		$url        = $is_gallery ? '' : self::public_url( self::posted( 'url' ) );
-		if ( ! in_array( $type, array_merge( self::MAP_TYPES, array( 'gallery' ) ), true ) ||
-			'' === $title || strlen( $title ) > 255 || ( ! $is_gallery && '' === $url ) ) {
-			self::redirect( 'invalid', $tab );
+		$errors = array();
+		if ( ! in_array( $type, array_merge( self::MAP_TYPES, array( 'gallery' ) ), true ) ) {
+			$errors['type'] = __( 'Choose Trip, Track, or Retrospective for a map.', 'gallery-for-spotwalla' );
+		}
+		if ( '' === $title ) {
+			$errors['title'] = __( 'Enter a title.', 'gallery-for-spotwalla' );
+		} elseif ( strlen( $title ) > 255 ) {
+			$errors['title'] = __( 'Shorten the title to 255 bytes or fewer. Accented characters and emoji may use more than one byte.', 'gallery-for-spotwalla' );
+		}
+		if ( ! $is_gallery && '' === $url ) {
+			$errors['url'] = __( 'Enter an HTTPS public SpotWalla link on spotwalla.com, www.spotwalla.com, or new.spotwalla.com. Do not include login credentials or a non-default port.', 'gallery-for-spotwalla' );
 		}
 		$existing = $id ? self::item( $id ) : null;
-		if ( $id && ( ! $existing || $existing['type'] !== $type ) ) {
-			self::redirect( 'invalid', $tab );
+		if ( $id && ! $existing ) {
+			$errors['form'] = __( 'This item no longer exists. Your entries have been kept so you can add it again.', 'gallery-for-spotwalla' );
+			$id = 0;
+		} elseif ( $existing && $existing['type'] !== $type ) {
+			$errors['type'] = __( 'An existing map or gallery cannot change type. Restore its original type or create a new item.', 'gallery-for-spotwalla' );
+			$tab = self::tab_for( $existing['type'] );
 		}
 		$gallery_ids        = $is_gallery ? array() : self::posted_ids( 'gallery_ids' );
 		$member_title       = $is_gallery ? self::override( 'member_title' ) : 'item';
 		$member_description = $is_gallery ? self::override( 'member_description' ) : 'item';
 		$fill_factor        = self::fill_factor( self::posted( 'fill_factor' ) );
-		if ( null === $gallery_ids || null === $member_title || null === $member_description || null === $fill_factor ) {
-			self::redirect( 'invalid', $tab );
+		if ( null === $gallery_ids ) {
+			$errors['gallery_ids'] = __( 'Choose galleries from the available list.', 'gallery-for-spotwalla' );
+		}
+		if ( null === $member_title ) {
+			$errors['member_title'] = __( 'Choose a valid map title visibility setting.', 'gallery-for-spotwalla' );
+		}
+		if ( null === $member_description ) {
+			$errors['member_description'] = __( 'Choose a valid map description visibility setting.', 'gallery-for-spotwalla' );
+		}
+		if ( null === $fill_factor ) {
+			$errors['fill_factor'] = __( 'Choose a density from the available options, or use the SpotWalla default.', 'gallery-for-spotwalla' );
 		}
 		if ( $gallery_ids ) {
 			$placeholders = implode( ',', array_fill( 0, count( $gallery_ids ), '%d' ) );
 			// $placeholders contains only %d placeholders, one per ID.
 			$found = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM %i WHERE type = 'gallery' AND id IN ($placeholders)", array_merge( array( $items ), $gallery_ids ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			if ( count( $found ) !== count( $gallery_ids ) ) {
-				self::redirect( 'invalid', $tab );
+				$errors['gallery_ids'] = __( 'One or more selected galleries no longer exist. Update your selection from the available galleries.', 'gallery-for-spotwalla' );
 			}
+		}
+		if ( $errors ) {
+			self::save_error( $errors, $tab, $id );
 		}
 		$data = array(
 			'type'               => $type,
@@ -560,16 +652,16 @@ final class Gallery_For_SpotWalla {
 		);
 		$result = $id ? $wpdb->update( $items, $data, array( 'id' => $id ) ) : $wpdb->insert( $items, $data );
 		if ( false === $result ) {
-			self::redirect( 'error', $tab );
+			self::save_error( array( 'form' => __( 'The database could not save this item. Your entries have been kept. Try saving again; if the problem continues, contact your site administrator.', 'gallery-for-spotwalla' ) ), $tab, $id );
 		}
 		if ( ! $is_gallery ) {
 			$item_id = $id ?: (int) $wpdb->insert_id;
 			if ( false === $wpdb->delete( $relations, array( 'item_id' => $item_id ) ) ) {
-				self::redirect( 'error', $tab );
+				self::save_error( array( 'gallery_ids' => __( 'The map was saved, but its gallery memberships could not be updated. Check your selections and save again.', 'gallery-for-spotwalla' ) ), $tab, $item_id );
 			}
 			foreach ( $gallery_ids as $gallery_id ) {
 				if ( false === $wpdb->insert( $relations, array( 'gallery_id' => $gallery_id, 'item_id' => $item_id ) ) ) {
-					self::redirect( 'error', $tab );
+					self::save_error( array( 'gallery_ids' => __( 'The map was saved, but some gallery memberships could not be saved. Check your selections and save again.', 'gallery-for-spotwalla' ) ), $tab, $item_id );
 				}
 			}
 		}
@@ -631,11 +723,14 @@ final class Gallery_For_SpotWalla {
 			'hide' => __( 'Hide for all maps', 'gallery-for-spotwalla' ),
 		);
 		?>
-		<tr><th><label for="sw-<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-<?php echo esc_attr( $name ); ?>" name="<?php echo esc_attr( $name ); ?>">
+		<tr><th><label for="sw-<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-<?php echo esc_attr( $name ); ?>" name="<?php echo esc_attr( $name ); ?>"<?php self::error_attributes( $name ); ?>>
+			<?php if ( ! isset( $labels[ $value ] ) ) : ?>
+				<option value="<?php echo esc_attr( $value ); ?>" selected><?php echo esc_html( $value ); ?></option>
+			<?php endif; ?>
 			<?php foreach ( $labels as $key => $text ) : ?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $value, $key ); ?>><?php echo esc_html( $text ); ?></option>
 			<?php endforeach; ?>
-		</select></td></tr>
+		</select><?php self::field_error( $name ); ?></td></tr>
 		<?php
 	}
 
@@ -650,7 +745,10 @@ final class Gallery_For_SpotWalla {
 	private static function fill_select( $value, $is_gallery ) {
 		$label = $is_gallery ? __( 'Map density in this gallery', 'gallery-for-spotwalla' ) : __( 'Density/Fill percentage', 'gallery-for-spotwalla' );
 		?>
-		<tr><th><label for="sw-fill-factor"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-fill-factor" name="fill_factor">
+		<tr><th><label for="sw-fill-factor"><?php echo esc_html( $label ); ?></label></th><td><select id="sw-fill-factor" name="fill_factor"<?php self::error_attributes( 'fill_factor' ); ?>>
+			<?php if ( null === self::fill_factor( $value ) ) : ?>
+				<option value="<?php echo esc_attr( $value ); ?>" selected><?php echo esc_html( $value ); ?></option>
+			<?php endif; ?>
 			<option value="" <?php selected( $value, '' ); ?>><?php echo esc_html( $is_gallery ? __( "Use each map's setting", 'gallery-for-spotwalla' ) : __( 'SpotWalla trip setting', 'gallery-for-spotwalla' ) ); ?></option>
 			<?php foreach ( self::FILL_FACTORS as $key => $text ) : ?>
 				<?php
@@ -663,7 +761,7 @@ final class Gallery_For_SpotWalla {
 				?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( (string) $value, (string) $key ); ?>><?php echo esc_html( $text ); ?></option>
 			<?php endforeach; ?>
-		</select><p class="description"><?php echo esc_html( $is_gallery ? __( 'Overrides the density of every trip map shown in this gallery.', 'gallery-for-spotwalla' ) : __( "Sets SpotWalla's Density/Fill Percentage (number of locations shown). Applies to trips only.", 'gallery-for-spotwalla' ) ); ?></p></td></tr>
+		</select><?php self::field_error( 'fill_factor' ); ?><p class="description"><?php echo esc_html( $is_gallery ? __( 'Overrides the density of every trip map shown in this gallery.', 'gallery-for-spotwalla' ) : __( "Sets SpotWalla's Density/Fill Percentage (number of locations shown). Applies to trips only.", 'gallery-for-spotwalla' ) ); ?></p></td></tr>
 		<?php
 	}
 
@@ -809,7 +907,21 @@ final class Gallery_For_SpotWalla {
 		}
 		$edit    = isset( $_GET['edit'] ) && is_scalar( $_GET['edit'] ) ? self::item( absint( $_GET['edit'] ) ) : null;
 		$message = isset( $_GET['sw_message'] ) && is_scalar( $_GET['sw_message'] ) ? sanitize_key( $_GET['sw_message'] ) : '';
+		$token   = isset( $_GET['sw_form'] ) && is_scalar( $_GET['sw_form'] ) ? sanitize_text_field( wp_unslash( $_GET['sw_form'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		self::$form_errors = array();
+		$draft = null;
+		if ( '' !== $token ) {
+			$draft = preg_match( '/^[a-zA-Z0-9]{32}$/', $token ) ? get_transient( self::form_key( $token ) ) : false;
+			if ( is_array( $draft ) ) {
+				delete_transient( self::form_key( $token ) );
+				self::$form_errors = $draft['errors'];
+				$edit = $draft['item']['id'] ? self::item( $draft['item']['id'] ) : null;
+			} else {
+				$draft = null;
+				self::$form_errors['form'] = __( 'The recovered form has expired or was already opened. Please enter your details again.', 'gallery-for-spotwalla' );
+			}
+		}
 		if ( $edit && 'gallery' === $edit['type'] ) {
 			$tab = 'galleries';
 		} elseif ( $edit ) {
@@ -831,6 +943,13 @@ final class Gallery_For_SpotWalla {
 		$defaults = array( 'id' => 0, 'type' => $is_gallery ? 'gallery' : 'trip', 'title' => '', 'description' => '', 'url' => '', 'show_title' => 1, 'show_description' => 1, 'member_title' => 'item', 'member_description' => 'item', 'fill_factor' => '', 'inherit_theme' => 1, 'background' => '#ffffff', 'color' => '#222222', 'width' => 800, 'height' => 450 );
 		$item     = $edit ?: $defaults;
 		$selected = $edit && ! $is_gallery ? self::gallery_ids_for( $edit['id'] ) : array();
+		if ( $draft ) {
+			$item = array_merge( $item, $draft['item'] );
+			if ( $edit ) {
+				$item['type'] = $edit['type'];
+			}
+			$selected = $draft['gallery_ids'];
+		}
 		if ( $is_gallery ) {
 			$form_heading = $edit ? __( 'Edit gallery', 'gallery-for-spotwalla' ) : __( 'Add gallery', 'gallery-for-spotwalla' );
 			$save_label   = __( 'Save gallery', 'gallery-for-spotwalla' );
@@ -849,6 +968,16 @@ final class Gallery_For_SpotWalla {
 		<div class="wrap">
 			<?php self::header(); ?>
 			<?php self::nav( $tab ); ?>
+			<?php if ( self::$form_errors ) : ?>
+				<div class="notice notice-error" role="alert">
+					<p><?php echo esc_html( $draft ? __( 'Review the errors below. Your submitted entries have been kept.', 'gallery-for-spotwalla' ) : __( 'The form could not be recovered.', 'gallery-for-spotwalla' ) ); ?></p>
+					<ul>
+						<?php foreach ( self::$form_errors as $error ) : ?>
+							<li><?php echo esc_html( $error ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
 			<?php if ( isset( $messages[ $message ] ) ) : ?>
 				<div class="notice <?php echo esc_attr( in_array( $message, array( 'invalid', 'error' ), true ) ? 'notice-error' : 'notice-success' ); ?>"><p><?php echo esc_html( $messages[ $message ] ); ?></p></div>
 			<?php endif; ?>
@@ -861,25 +990,29 @@ final class Gallery_For_SpotWalla {
 			?>
 			</p>
 			<h2><?php echo esc_html( $form_heading ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form class="gfsw-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="gfsw_save">
 				<input type="hidden" name="id" value="<?php echo esc_attr( $item['id'] ); ?>">
 				<?php if ( $is_gallery ) : ?><input type="hidden" name="type" value="gallery"><?php endif; ?>
 				<?php wp_nonce_field( 'gfsw_save' ); ?>
 				<table class="form-table" role="presentation">
-					<tr><th><label for="sw-title"><?php esc_html_e( 'Title', 'gallery-for-spotwalla' ); ?></label></th><td><input class="regular-text" id="sw-title" name="title" required maxlength="255" value="<?php echo esc_attr( $item['title'] ); ?>"></td></tr>
+					<tr><th><label for="sw-title"><?php esc_html_e( 'Title', 'gallery-for-spotwalla' ); ?></label></th><td><input class="regular-text" id="sw-title" name="title" required maxlength="255" value="<?php echo esc_attr( $item['title'] ); ?>"<?php self::error_attributes( 'title' ); ?>><?php self::field_error( 'title' ); ?></td></tr>
 					<?php if ( ! $is_gallery ) : ?>
 						<tr><th><label for="sw-type"><?php esc_html_e( 'Type', 'gallery-for-spotwalla' ); ?></label></th><td>
 							<?php if ( $edit ) : ?>
 								<input type="hidden" name="type" value="<?php echo esc_attr( $item['type'] ); ?>">
 								<span><?php echo esc_html( self::type_label( $item['type'] ) ); ?></span>
 							<?php else : ?>
-								<select id="sw-type" name="type">
+								<select id="sw-type" name="type"<?php self::error_attributes( 'type' ); ?>>
+									<?php if ( ! in_array( $item['type'], self::MAP_TYPES, true ) ) : ?>
+										<option value="<?php echo esc_attr( $item['type'] ); ?>" selected><?php echo esc_html( $item['type'] ); ?></option>
+									<?php endif; ?>
 									<?php foreach ( self::MAP_TYPES as $type ) : ?>
 										<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $item['type'], $type ); ?>><?php echo esc_html( self::type_label( $type ) ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							<?php endif; ?>
+							<?php self::field_error( 'type' ); ?>
 						</td></tr>
 					<?php endif; ?>
 					<tr><th><label for="sw-description"><?php esc_html_e( 'Description', 'gallery-for-spotwalla' ); ?></label></th><td><textarea class="large-text" id="sw-description" name="description" rows="4"><?php
@@ -892,17 +1025,26 @@ final class Gallery_For_SpotWalla {
 						<?php self::override_select( 'member_description', __( 'Map descriptions in this gallery', 'gallery-for-spotwalla' ), $item['member_description'] ); ?>
 						<?php self::fill_select( $item['fill_factor'], true ); ?>
 					<?php else : ?>
-						<tr><th><label for="sw-url"><?php esc_html_e( 'Public SpotWalla URL', 'gallery-for-spotwalla' ); ?></label></th><td><input type="url" class="large-text" id="sw-url" name="url" required value="<?php echo esc_attr( $item['url'] ); ?>"><p class="description"><?php esc_html_e( 'Use the HTTPS public or embed link supplied by SpotWalla.', 'gallery-for-spotwalla' ); ?></p></td></tr>
+						<tr><th><label for="sw-url"><?php esc_html_e( 'Public SpotWalla URL', 'gallery-for-spotwalla' ); ?></label></th><td><input type="url" class="large-text" id="sw-url" name="url" required value="<?php echo esc_attr( $item['url'] ); ?>"<?php self::error_attributes( 'url' ); ?>><?php self::field_error( 'url' ); ?><p class="description"><?php esc_html_e( 'Use the HTTPS public or embed link supplied by SpotWalla.', 'gallery-for-spotwalla' ); ?></p></td></tr>
 						<tr><th><?php esc_html_e( 'Visibility', 'gallery-for-spotwalla' ); ?></th><td><fieldset><legend class="screen-reader-text"><?php esc_html_e( 'Visibility', 'gallery-for-spotwalla' ); ?></legend>
 							<label><input type="checkbox" name="show_title" value="1" <?php checked( $item['show_title'], 1 ); ?>> <?php esc_html_e( 'Show title', 'gallery-for-spotwalla' ); ?></label><br>
 							<label><input type="checkbox" name="show_description" value="1" <?php checked( $item['show_description'], 1 ); ?>> <?php esc_html_e( 'Show description', 'gallery-for-spotwalla' ); ?></label>
 							<p class="description"><?php esc_html_e( 'A gallery can override these settings when it displays this map. Hiding the title also hides its link to SpotWalla.', 'gallery-for-spotwalla' ); ?></p>
 						</fieldset></td></tr>
 						<?php self::fill_select( $item['fill_factor'], false ); ?>
-						<tr><th><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></th><td><fieldset><legend class="screen-reader-text"><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></legend>
+						<tr><th><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></th><td><fieldset<?php self::error_attributes( 'gallery_ids' ); ?>><legend class="screen-reader-text"><?php esc_html_e( 'Galleries', 'gallery-for-spotwalla' ); ?></legend>
 							<?php foreach ( $galleries as $gallery ) : ?>
 								<label><input type="checkbox" name="gallery_ids[]" value="<?php echo esc_attr( $gallery['id'] ); ?>" <?php checked( in_array( (int) $gallery['id'], $selected, true ) ); ?>> <?php echo esc_html( $gallery['title'] . ' (#' . $gallery['id'] . ')' ); ?></label><br>
 							<?php endforeach; ?>
+							<?php foreach ( array_diff( $selected, array_map( 'absint', wp_list_pluck( $galleries, 'id' ) ) ) as $missing_id ) : ?>
+								<label><input type="checkbox" name="gallery_ids[]" value="<?php echo esc_attr( $missing_id ); ?>" checked>
+									<?php
+									/* translators: %d: the ID of a gallery that no longer exists. */
+									echo esc_html( sprintf( __( 'Unavailable gallery (#%d) - uncheck this selection.', 'gallery-for-spotwalla' ), $missing_id ) );
+									?>
+								</label><br>
+							<?php endforeach; ?>
+							<?php self::field_error( 'gallery_ids' ); ?>
 							<?php if ( ! $galleries ) : ?>
 								<p class="description"><?php esc_html_e( 'No galleries yet.', 'gallery-for-spotwalla' ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => 'galleries' ), $base_url ) ); ?>"><?php esc_html_e( 'Create one on the Galleries tab.', 'gallery-for-spotwalla' ); ?></a></p>
 							<?php else : ?>

@@ -24,6 +24,8 @@ The settings page opens on the **Maps** tab. Use it to add a title, plain-text d
 
 To group maps, first create a gallery on the **Galleries** tab, then select one or more galleries in a map's **Galleries** field on the **Maps** tab. A map can belong to multiple galleries; galleries cannot be nested. IDs are shown in each tab's table. Maps and galleries can be edited or deleted; deleting a gallery retains its maps. Types cannot be changed after creation.
 
+If saving fails, the form keeps your entries and shows specific error messages next to highlighted invalid fields. Database failures show a retry message without blaming a field. Recovery data is private to your administrator login session, expires after ten minutes, and is removed when the form is restored. Correct the highlighted fields and save again.
+
 Each map has **Show title** and **Show description** settings, both enabled by default. Displaying a map by its own ID always uses these settings. Within a gallery, the gallery's **Map titles** and **Map descriptions** options can use each map's setting (the default), or show or hide that element for all its maps. Hiding a title also hides its link to SpotWalla; the iframe retains the title for accessibility. Gallery titles and descriptions are always shown.
 
 ### Map density
@@ -81,6 +83,8 @@ The **Security checks and ZIP release** GitHub Actions workflow runs on pull req
 These checks support secure-development practices such as NIST SSDF; they do **not** certify NIST compliance or replace a manual review. There are currently no bundled third-party dependencies or lockfiles, so dependency CVE coverage is limited; the scan does not assess the site's WordPress installation, PHP runtime, or remote SpotWalla service. Commit lockfiles if dependencies are introduced. Semgrep downloads rules and scans locally with metrics disabled; no Semgrep account or source upload is needed.
 
 Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitting to WordPress.org, run the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin (`wp plugin check gallery-for-spotwalla`); it should report no errors. For integration verification in WordPress, activate the plugin, check all three tabs, create and edit each map type and multiple galleries, assign a map to several galleries, embed the IDs, verify visibility settings and gallery overrides, verify map and gallery density settings in the embedded trip URLs, check theme/custom styling and narrow-screen widths, delete a gallery and a map, verify upgrades from 1.0.0 and 1.0.2 (data moves from the `SW_*` to the `SpotGal_*` tables with the same IDs), check that every admin string is translatable, and verify both data-retaining and data-deleting deactivations.
+
+On a disposable WordPress test site with the plugin active, run `wp --user=<administrator> eval-file .github/tests/test_form_recovery.php` to check form recovery, field errors, output escaping, user isolation, one-use recovery tokens, corrected submissions, and database failure handling. This test creates and removes its own map and gallery records; do not run it on a production site.
 
 ## Building and publishing releases
 
