@@ -322,12 +322,16 @@ final class Gallery_For_SpotWalla {
 	 * @return void
 	 */
 	private static function header() {
+		$plugin = get_file_data( __FILE__, array( 'version' => 'Version' ) );
 		?>
 		<div class="gfsw-header">
 			<img src="<?php echo esc_url( plugins_url( 'images/logo-256x256.jpg', __FILE__ ) ); ?>" width="128" height="128" alt="" />
 			<div>
 				<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
-				<p class="gfsw-tagline"><?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?></p>
+				<p class="gfsw-tagline">
+					<?php esc_html_e( "an O'ConnorADV project", 'gallery-for-spotwalla' ); ?>
+					<span class="gfsw-version"><?php /* translators: %s: installed plugin version. */ echo esc_html( sprintf( __( 'Version %s', 'gallery-for-spotwalla' ), $plugin['version'] ) ); ?></span>
+				</p>
 			</div>
 		</div>
 		<hr class="wp-header-end" />

@@ -69,6 +69,7 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stab
 
 = 1.0.6 =
 * Added an optional Recommended Plugins section on the About page linking to the Motorcycle Rally Scoring App project.
+* The admin header shows the installed plugin version next to the project byline.
 
 = 1.0.5 =
 * First stable release.
