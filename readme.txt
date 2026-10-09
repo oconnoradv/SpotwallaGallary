@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
 
+= 1.0.7 =
+* Failed map and gallery saves return to the form with the submitted entries, highlighted invalid fields, and specific error messages.
+
 = 1.0.6 =
 * Added an optional Recommended Plugins section on the About page linking to the Motorcycle Rally Scoring App project.
 * The admin header shows the installed plugin version next to the project byline.
@@ -99,6 +102,9 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stab
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.7 =
+Improves form error recovery without changing saved map data.
 
 = 1.0.6 =
 Adds an optional related-plugin link to the About page and isolates embedded maps in a sandboxed iframe. No data changes.
