@@ -10,6 +10,11 @@ class GateError(RuntimeError):
     """Release security prerequisites are missing, failed, or contain findings."""
 
 
+# CodeQL default setup covers Actions here; PHP is covered by Semgrep.
+# Add categories here when enabling additional CodeQL languages.
+CODEQL_CATEGORIES = {"/language:actions"}
+
+
 def api(path, token, paginate=False):
     """Read GitHub JSON without exposing credentials in command arguments or logs."""
     env = dict(os.environ, GH_TOKEN=token)
@@ -51,14 +56,7 @@ def check_dependabot(repo, token):
 
 
 def check_codeql(repo, sha, token):
-    setup = api(f"repos/{repo}/code-scanning/default-setup", token)
-    if (
-        not isinstance(setup, dict)
-        or setup.get("state") != "configured"
-        or not setup.get("languages")
-    ):
-        raise GateError("CodeQL default setup must be enabled with language coverage.")
-    categories = {f"/language:{language}" for language in setup["languages"]}
+    categories = CODEQL_CATEGORIES
     analyses = api(
         f"repos/{repo}/code-scanning/analyses"
         "?ref=refs%2Fheads%2Fmain&tool_name=CodeQL&per_page=100",

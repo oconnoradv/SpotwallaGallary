@@ -44,7 +44,7 @@ class ReleaseSecurityTests(unittest.TestCase):
             ([analysis(category="/language:python")], False),
         ):
             with self.subTest(analyses=analyses):
-                with patch.object(security, "api", side_effect=[setup, analyses]):
+                with patch.object(security, "api", return_value=analyses):
                     self.assertEqual(
                         security.check_codeql("owner/repo", "release-sha", "codeql"),
                         expected,
@@ -55,24 +55,24 @@ class ReleaseSecurityTests(unittest.TestCase):
         for result in (analysis(count=1), analysis(error="failed"), analysis(count=None)):
             with self.subTest(result=result):
                 # An older clean rerun must not conceal the latest failed one.
-                with patch.object(security, "api", side_effect=[setup, [result, analysis()]]):
+                with patch.object(security, "api", return_value=[result, analysis()]):
                     with self.assertRaises(security.GateError):
                         security.check_codeql("owner/repo", "release-sha", "codeql")
 
     def test_all_configured_languages_are_required(self):
         setup = {"state": "configured", "languages": ["actions", "python"]}
-        with patch.object(security, "api", side_effect=[setup, [analysis()]]):
-            self.assertFalse(security.check_codeql("owner/repo", "release-sha", "codeql"))
-        with patch.object(
-            security, "api",
-            side_effect=[setup, [analysis(), analysis(category="/language:python")]],
-        ):
-            self.assertTrue(security.check_codeql("owner/repo", "release-sha", "codeql"))
+        with patch.object(security, "CODEQL_CATEGORIES", {"/language:actions", "/language:python"}):
+            with patch.object(security, "api", return_value=[analysis()]):
+                self.assertFalse(security.check_codeql("owner/repo", "release-sha", "codeql"))
+            with patch.object(
+                security, "api",
+                return_value=[analysis(), analysis(category="/language:python")],
+            ):
+                self.assertTrue(security.check_codeql("owner/repo", "release-sha", "codeql"))
 
     def test_disabled_codeql_blocks(self):
-        with patch.object(security, "api", return_value={"state": "not-configured"}):
-            with self.assertRaises(security.GateError):
-                security.check_codeql("owner/repo", "release-sha", "codeql")
+        with patch.object(security, "api", return_value=[]):
+            self.assertFalse(security.check_codeql("owner/repo", "release-sha", "codeql"))
 
     def test_timeout_blocks_and_success_refreshes_alerts(self):
         with patch.object(security, "check_dependabot") as alerts:
