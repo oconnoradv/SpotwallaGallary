@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -710,7 +710,7 @@ final class Gallery_For_SpotWalla {
 	}
 
 	/**
-	 * Outputs the About tab: version, disclaimer, links, license, and issue-reporting steps.
+	 * Outputs the About tab: version, disclaimer, links, license, recommendations, and issue-reporting steps.
 	 *
 	 * @return void
 	 */
@@ -745,6 +745,13 @@ final class Gallery_For_SpotWalla {
 				<?php endforeach; ?>
 			</table>
 			<p><?php echo wp_kses( __( "The plugin is free software released under the GNU General Public License, version 2 or (at your option) any later version. Copies of <code>readme.txt</code>, <code>README.md</code>, and <code>LICENSE</code> are included in the plugin's folder.", 'gallery-for-spotwalla' ), $allowed ); ?></p>
+			<h2><?php esc_html_e( 'Recommended Plugins', 'gallery-for-spotwalla' ); ?></h2>
+			<p>
+				<?php
+				/* translators: 1: link to the Motorcycle Rally Scoring App project, 2: "(opens in a new tab)" text for screen readers. */
+				echo wp_kses( sprintf( __( 'For motorcycle rally event management and scoring, see the related <a href="%1$s" target="_blank" rel="noopener noreferrer">Motorcycle Rally Scoring App plugin</a>, a separate, optional O\'ConnorADV project%2$s.', 'gallery-for-spotwalla' ), esc_url( 'https://github.com/oconnoradv/MotorcycleRallyScoringApp' ), self::new_tab_text() ), $allowed );
+				?>
+			</p>
 			<h2><?php esc_html_e( 'Reporting issues', 'gallery-for-spotwalla' ); ?></h2>
 			<ol>
 				<li>

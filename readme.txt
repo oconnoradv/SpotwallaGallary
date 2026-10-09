@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,7 +65,10 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 
 == Changelog ==
 
-Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 is the first stable release.
+Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
+
+= 1.0.6 =
+* Added an optional Recommended Plugins section on the About page linking to the Motorcycle Rally Scoring App project.
 
 = 1.0.5 =
 * First stable release.
@@ -94,6 +97,9 @@ Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 is the first stabl
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+Adds an optional link to the related Motorcycle Rally Scoring App project on the About page. No data changes.
 
 = 1.0.5 =
 First stable release. The page header shows the plugin name again. No data changes.
