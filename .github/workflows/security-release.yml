@@ -43,6 +43,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6
         with:
           version: v0.75.0
@@ -75,6 +76,28 @@ jobs:
             --config p/security-audit --error --strict --metrics off \
             --disable-version-check --json --output reports/semgrep-security-audit.json \
             gallery-for-spotwalla.php
+      - name: Install Gitleaks
+        if: ${{ !cancelled() }}
+        run: |
+          version=8.30.1
+          archive="gitleaks_${version}_linux_x64.tar.gz"
+          base_url="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+          curl --fail --location --silent --show-error "${base_url}/${archive}" \
+            --output "$RUNNER_TEMP/${archive}"
+          curl --fail --location --silent --show-error "${base_url}/gitleaks_${version}_checksums.txt" \
+            --output "$RUNNER_TEMP/gitleaks_checksums.txt"
+          cd "$RUNNER_TEMP"
+          awk -v asset="$archive" '$2 == asset { print }' gitleaks_checksums.txt > gitleaks.sha256
+          sha256sum --check --status gitleaks.sha256
+          tar -xzf "$archive" gitleaks
+      - name: Scan Git history for secrets
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          "$RUNNER_TEMP/gitleaks" git . \
+            --no-banner --redact --report-format json \
+            --report-path reports/gitleaks.json \
+            --exit-code 1 --log-level error
       - name: Retain security reports
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
