@@ -74,7 +74,24 @@ By default, deactivation retains all tables for reactivation. In **Data retentio
 
 ## Translations
 
-All admin text uses the `gallery-for-spotwalla` text domain. The translation template is `languages/gallery-for-spotwalla.pot`. Once the plugin is on WordPress.org, translations can be contributed at [translate.wordpress.org](https://translate.wordpress.org/) and WordPress downloads them automatically. For a local translation, create `gallery-for-spotwalla-{locale}.po`/`.mo` files from the template (for example with Poedit) and place them in `wp-content/languages/plugins/`. After changing any text, regenerate the template with `wp i18n make-pot . languages/gallery-for-spotwalla.pot --include=gallery-for-spotwalla.php`.
+All admin text uses the `gallery-for-spotwalla` text domain. The translation template is `languages/gallery-for-spotwalla.pot`. Once the plugin is on WordPress.org, translations can be contributed at [translate.wordpress.org](https://translate.wordpress.org/) and WordPress downloads them automatically. For a local translation, create `gallery-for-spotwalla-{locale}.po`/`.mo` files from the template (for example with Poedit) and place them in `wp-content/languages/plugins/`. After changing any text, regenerate the template with `wp i18n make-pot . languages/gallery-for-spotwalla.pot --include=gallery-for-spotwalla.php,includes`.
+
+## Development architecture
+
+The bootstrap `gallery-for-spotwalla.php` composes the runtime dependencies and retains the public `Gallery_For_SpotWalla` callbacks and constants for compatibility. Components in `includes/` have separate responsibilities:
+
+| Component | Responsibility |
+| --- | --- |
+| `GFSW_Lifecycle` | Activation, schema upgrades, legacy migration, and opt-in deactivation cleanup |
+| `GFSW_Wpdb_Store` | Prepared database queries and content/settings persistence |
+| `GFSW_Validator` | Content validation, normalization, URL allowlisting, and density policy |
+| `GFSW_Form_Recovery` | Session-scoped, expiring failed-form drafts |
+| `GFSW_Admin` | Authorized, nonce-protected save/delete/settings requests |
+| `GFSW_Admin_Page` | Admin page presentation and field feedback |
+| `GFSW_Renderer` | Shortcode output, visibility overrides, styles, and sandboxed maps |
+| `GFSW_Config` | Shared identity and supported option values |
+
+Admin operations depend on the injected `GFSW_Store` contract, not SQL or a global database connection. The renderer accepts only the smaller `GFSW_Item_Reader` contract; it cannot write content. Alternative adapters can implement these contracts without changing consumers, and tests can supply in-memory readers. Keep replacement adapters consistent with the documented return values, ordering, and failure semantics. Schema management is intentionally WordPress-specific and uses an injected `wpdb` connection. No dependency container, runtime framework, or new third-party library is required.
 
 ## Validation
 
@@ -86,9 +103,11 @@ Check PHP syntax locally with `php -l gallery-for-spotwalla.php`. Before submitt
 
 On a disposable WordPress test site with the plugin active, run `wp --user=<administrator> eval-file .github/tests/test_form_recovery.php` to check form recovery, field errors, output escaping, user isolation, one-use recovery tokens, corrected submissions, and database failure handling. This test creates and removes its own map and gallery records; do not run it on a production site.
 
+Run `wp --user=<administrator> eval-file .github/tests/test_components.php` on the same disposable site to check rendering with a read-only in-memory adapter, URL and density policy, the database adapter contract, activation, schema upgrades, legacy migration, and retention/deletion. Its database fixtures use a unique temporary table prefix and are removed afterward. Packaging tests (`python -m unittest discover -s .github/tests -p "test_*.py"`) also verify that every runtime PHP file is explicitly shipped and loaded by the bootstrap.
+
 ## Building and publishing releases
 
-Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin PHP file, `readme.txt` (the WordPress.org readme), `README.md`, the license, the translation template (`languages/gallery-for-spotwalla.pot`), and the admin header logo (`images/logo-256x256.jpg`) inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
+Build locally with Python 3.9+ using `python .github/scripts/build_release.py`. The verified ZIP and SHA-256 checksum are written to `dist/`. Packaging uses an explicit allowlist: the plugin bootstrap and runtime PHP components in `includes/`, `readme.txt` (the WordPress.org readme), `README.md`, the license, the translation template (`languages/gallery-for-spotwalla.pot`), and the admin header logo (`images/logo-256x256.jpg`) inside a single `gallery-for-spotwalla/` directory. CI configuration, reports, and development files are excluded. Successful non-tag workflow runs also retain the package as an artifact for 14 days.
 
 The `.wordpress-org/` folder holds the plugin directory listing images, in the sizes WordPress.org recommends: banners at 772×250 and 1544×500 pixels and icons at 128×128 and 256×256 pixels. They are not part of the plugin ZIP. After the plugin is approved, copy them into the `assets/` folder of the WordPress.org SVN repository.
 
