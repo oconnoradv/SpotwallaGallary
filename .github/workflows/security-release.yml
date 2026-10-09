@@ -67,6 +67,14 @@ jobs:
             --config p/php --error --strict --metrics off \
             --disable-version-check --json --output reports/semgrep.json \
             gallery-for-spotwalla.php
+      - name: Scan common PHP exploit patterns
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          "$RUNNER_TEMP/semgrep/bin/semgrep" scan \
+            --config p/security-audit --error --strict --metrics off \
+            --disable-version-check --json --output reports/semgrep-security-audit.json \
+            gallery-for-spotwalla.php
       - name: Retain security reports
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
