@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-13T16:24:02+00:00\n"
+"POT-Creation-Date: 2026-10-13T16:47:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gallery-for-spotwalla\n"
@@ -192,10 +192,10 @@ msgstr ""
 msgid "Recommended Plugins"
 msgstr ""
 
-#. translators: 1: link to the Motorcycle Rally Scoring App project, 2: "(opens in a new tab)" text for screen readers.
+#. translators: 1: link to RallyQuestEngine, 2: "(opens in a new tab)" text for screen readers.
 #: includes/class-gfsw-admin-page.php:283
 #, php-format
-msgid "For motorcycle rally event management and scoring, see the related <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">Motorcycle Rally Scoring App plugin</a>, a separate, optional O'ConnorADV project%2$s."
+msgid "For competitive motorcycle rally scoring, see <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">RallyQuestEngine: A Competitive Motorcycle Rally Scoring Application%2$s</a>, a separate, optional O'ConnorADV project. It is not required to use Gallery for SpotWalla."
 msgstr ""
 
 #: includes/class-gfsw-admin-page.php:286

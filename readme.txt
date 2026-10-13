@@ -78,6 +78,8 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
 
 = 1.0.10 =
+* The About page recommends RallyQuestEngine, a separate, optional competitive motorcycle rally scoring application.
+* README documentation describes current functionality without historical version references.
 * Added read-only previews for unsaved map entries and saved maps.
 * Replaced the flower logo with a local animated map-and-route illustration, reduced-motion support, and matching static listing artwork.
 * Fixed opaque-origin iframe restrictions that blocked SpotWalla trip requests and Mapbox tiles. Forms, popups, downloads, and top-level navigation remain disabled.

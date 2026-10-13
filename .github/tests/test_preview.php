@@ -127,6 +127,12 @@ try {
 	Gallery_For_SpotWalla::admin();
 	$page = ob_get_clean();
 	gfsw_preview_expect( false !== strpos( $page, 'id="gfsw-preview"' ) && false !== strpos( $page, 'data-map-id="' . $map_id . '"' ) && false !== strpos( $page, 'images/logo-map.svg' ), 'Maps tab must expose form/list previews and the new logo.' );
+	$_GET = array( 'tab' => 'about' );
+	ob_start();
+	Gallery_For_SpotWalla::admin();
+	$about = ob_get_clean();
+	gfsw_preview_expect( false !== strpos( $about, 'Recommended Plugins' ) && false !== strpos( $about, 'href="https://github.com/oconnoradv/RallyQuestEngine" target="_blank" rel="noopener noreferrer"' ) && false !== strpos( $about, 'RallyQuestEngine: A Competitive Motorcycle Rally Scoring Application' ), 'About must recommend RallyQuestEngine with a safe external link.' );
+	gfsw_preview_expect( false === strpos( $about, 'MotorcycleRallyScoringApp' ) && false !== strpos( $about, 'It is not required to use Gallery for SpotWalla.' ), 'The recommendation must be optional and replace the old project link.' );
 } finally {
 	wp_set_current_user( $user_id );
 	foreach ( array_reverse( $created ) as $id ) {
