@@ -4,7 +4,7 @@ Tags: maps, gps, tracking, travel, embed
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,8 @@ Gallery for SpotWalla lets administrators save public SpotWalla trip, track, and
 Features:
 
 * **Maps** tab: add trips, tracks, and retrospectives with a title, description, title/description visibility, trip density, and custom description colors and map dimensions.
+* **Preview** current map entries without saving, or preview a saved map from the list. JavaScript is required; published site-theme styling may differ.
+* Local animated map-and-route logo, with reduced-motion support and matching static icons.
 * **Galleries** tab: group maps into galleries. A map can belong to any number of galleries, and a gallery can override its maps' title, description, and trip density settings.
 * **About** tab: version, links, and how to report issues.
 * Embed with `[gallery_for_spotwalla id="123"]`. The shortcode from earlier versions, `[spotwalla_gallery id="123"]`, still works.
@@ -31,8 +33,8 @@ SpotWalla does not allow the map layer (streets, terrain, satellite) or picture 
 
 This plugin embeds maps from SpotWalla (https://spotwalla.com), an online personal location management service, to display the trips, tracks, and retrospectives you add.
 
-* What is sent and when: when a visitor views a page containing the shortcode, their browser loads each saved public SpotWalla link (with the selected density setting for trips) in a sandboxed iframe directly from SpotWalla. SpotWalla receives the visitor's IP address, browser information, and the requested map link, and may set cookies and use analytics as described in its policy. The plugin sends no referrer and no other site or visitor data, and it makes no server-side requests to SpotWalla.
-* Only HTTPS links on spotwalla.com, www.spotwalla.com, and new.spotwalla.com are accepted, and the host is checked again when the map is rendered. The sandbox allows scripts needed to display the map in an isolated browser origin, but does not allow the frame to access the WordPress page, submit forms, open popups, download files, or navigate the top-level page. The plugin cannot scan remote SpotWalla content for malware or control resources SpotWalla itself loads, such as map tiles.
+* What is sent and when: when a visitor views a page containing the shortcode, or an administrator requests a map preview, their browser loads the public SpotWalla link (with the selected density setting for trips) in a sandboxed iframe directly from SpotWalla. SpotWalla receives the visitor's IP address, browser information, and the requested map link, and may set cookies and use analytics as described in its policy. The plugin sends no referrer and no other site or visitor data, and it makes no server-side requests to SpotWalla.
+* Only HTTPS links on spotwalla.com, www.spotwalla.com, and new.spotwalla.com are accepted, and the host is checked again when the map is rendered. The sandbox permits scripts and preserves SpotWalla's origin so its map requests and controls can work. Browser same-origin rules isolate the cross-origin map from WordPress. Forms, popups, downloads, and top-level navigation remain disabled. A redirect to your own site's origin would remove that cross-origin isolation; use trusted public viewer links only. The plugin cannot verify redirects, scan remote content for malware, or control resources SpotWalla itself loads, such as map tiles.
 * SpotWalla Terms of Service and Privacy Policy: https://spotwalla.com/tos
 
 == Installation ==
@@ -46,6 +48,14 @@ This plugin embeds maps from SpotWalla (https://spotwalla.com), an online person
 **Upgrading from "SpotWalla Gallery" 1.0.0 or 1.0.1:** the plugin was renamed. Install and activate Gallery for SpotWalla first; it copies your maps and galleries, keeping their IDs so existing shortcodes keep working. Then deactivate and delete the old "SpotWalla Gallery" plugin. Back up before upgrading.
 
 == Frequently Asked Questions ==
+
+= Why is my map blank or are controls missing? =
+
+Open the saved public link directly. Remote SSL errors, private content, framing restrictions, and blocked map resources cannot be fixed by the plugin. Verify an alternate public SpotWalla host if your current one fails, then edit the saved URL. The iframe now preserves SpotWalla's origin for origin-sensitive requests and controls; the plugin cannot style controls inside the cross-origin viewer.
+
+= Does the plugin support daily static snapshots? =
+
+Not yet. Automatic capture needs a trusted image-rendering endpoint; a PHP request cannot render an interactive map. Maps still use live iframes. No screenshot provider has been added and no map links are sent to one.
 
 = Can I choose the map layer or hide picture icons? =
 
@@ -66,6 +76,12 @@ Open an issue at https://github.com/oconnoradv/SpotwallaGallary/issues. Do not i
 == Changelog ==
 
 Versions 1.0.0 through 1.0.4 were development releases. 1.0.5 was the first stable release.
+
+= 1.0.10 =
+* Added read-only previews for unsaved map entries and saved maps.
+* Replaced the flower logo with a local animated map-and-route illustration, reduced-motion support, and matching static listing artwork.
+* Fixed opaque-origin iframe restrictions that blocked SpotWalla trip requests and Mapbox tiles. Forms, popups, downloads, and top-level navigation remain disabled.
+* Added preview regression coverage, translations, and map troubleshooting guidance. Automatic daily snapshots remain deferred pending a trusted rendering endpoint.
 
 = 1.0.9 =
 * Release publication now requires no open Dependabot alerts and a clean CodeQL analysis of the exact release commit.

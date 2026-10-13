@@ -51,8 +51,12 @@ $map = array(
 );
 $reader->items[1] = $map;
 $html = $renderer->shortcode( array( 'id' => 1 ) );
-foreach ( array( '&lt;Trip&gt;', 'fillFactor=30', 'sandbox="allow-scripts"', 'referrerpolicy="no-referrer"', 'loading="lazy"', 'height="450"' ) as $expected ) {
+foreach ( array( '&lt;Trip&gt;', 'fillFactor=30', 'sandbox="allow-scripts allow-same-origin"', 'referrerpolicy="no-referrer"', 'loading="lazy"', 'height="450"' ) as $expected ) {
 	gfsw_component_expect( false !== strpos( $html, $expected ), 'Rendered map must contain: ' . $expected );
+}
+gfsw_component_expect( $html === $renderer->map( $map ), 'Preview and standalone shortcode rendering must match.' );
+foreach ( array( 'allow-forms', 'allow-popups', 'allow-top-navigation', 'allow-downloads' ) as $permission ) {
+	gfsw_component_expect( false === strpos( $html, $permission ), 'Frames must not grant: ' . $permission );
 }
 foreach ( array( 'track', 'retrospective' ) as $type ) {
 	$reader->items[1]['type'] = $type;

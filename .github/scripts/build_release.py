@@ -26,6 +26,8 @@ FILES = (
     "LICENSE",
     "languages/gallery-for-spotwalla.pot",
     "images/logo-256x256.jpg",
+    "images/logo-map.svg",
+    "images/admin-preview.js",
 )
 
 

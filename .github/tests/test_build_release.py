@@ -74,6 +74,14 @@ class BuildReleaseTests(unittest.TestCase):
         required = set(re.findall(r"require_once __DIR__ \. '/([^']+)';", source))
         self.assertEqual(runtime, required)
 
+    def test_admin_assets_are_explicitly_packaged(self):
+        repo = Path(__file__).resolve().parents[2]
+        source = (repo / "includes" / "class-gfsw-admin-page.php").read_text(encoding="utf-8")
+        assets = set(re.findall(r"plugins_url\( '(images/[^']+)'", source))
+        self.assertEqual(assets, {"images/logo-map.svg", "images/admin-preview.js"})
+        self.assertTrue(assets.issubset(set(release.FILES)))
+        self.assertTrue(all((repo / name).is_file() for name in assets))
+
 
 if __name__ == "__main__":
     unittest.main()

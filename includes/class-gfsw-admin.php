@@ -81,6 +81,62 @@ final class GFSW_Admin {
 	}
 
 	/**
+	 * @return array Unslashed form fields shared by saving and previewing.
+	 */
+	private function submitted_fields() {
+		$input = array();
+		$defaults = array( 'type' => '', 'title' => '', 'description' => '', 'url' => '', 'show_title' => '', 'show_description' => '', 'member_title' => 'item', 'member_description' => 'item', 'fill_factor' => '', 'inherit_theme' => '', 'background' => '', 'color' => '', 'width' => '800', 'height' => '450' );
+		foreach ( $defaults as $field => $default ) {
+			$input[ $field ] = $this->posted( $field, $default );
+		}
+		return $input;
+	}
+
+	/**
+	 * Returns a saved or unsaved map preview without writing content or recovery data.
+	 *
+	 * @return void
+	 */
+	public function preview() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'errors' => array( 'form' => __( 'You are not allowed to manage SpotWalla galleries.', 'gallery-for-spotwalla' ) ) ), 403 );
+		}
+		if ( ! check_ajax_referer( 'gfsw_preview', '_ajax_nonce', false ) ) {
+			wp_send_json_error( array( 'errors' => array( 'form' => __( 'Your preview session has expired. Reload this page and try again.', 'gallery-for-spotwalla' ) ) ), 403 );
+		}
+		$saved_id = $this->posted( 'saved_id' );
+		if ( '' !== $saved_id ) {
+			$item = preg_match( '/^[1-9][0-9]*$/', $saved_id ) ? $this->store->item( absint( $saved_id ) ) : null;
+			if ( ! $item || ! in_array( $item['type'], GFSW_Config::MAP_TYPES, true ) ) {
+				wp_send_json_error( array( 'errors' => array( 'form' => __( 'This map is no longer available. Reload the Maps tab.', 'gallery-for-spotwalla' ) ) ), 404 );
+			}
+			if ( ! GFSW_Validator::public_url( $item['url'] ) ) {
+				wp_send_json_error( array( 'errors' => array( 'url' => __( 'This map has an invalid SpotWalla URL. Edit it before previewing.', 'gallery-for-spotwalla' ) ) ), 422 );
+			}
+		} else {
+			$input = $this->submitted_fields();
+			$id = absint( $this->posted( 'id' ) );
+			$existing = $id ? $this->store->item( $id ) : null;
+			$gallery_ids = $this->posted_ids( 'gallery_ids' );
+			$found = $gallery_ids ? $this->store->existing_gallery_ids( $gallery_ids ) : array();
+			$prepared = GFSW_Validator::prepare( $input, $existing, $gallery_ids, $found );
+			$errors = $prepared['errors'];
+			if ( ! in_array( $input['type'], GFSW_Config::MAP_TYPES, true ) ) {
+				$errors['type'] = __( 'Choose Trip, Track, or Retrospective for a map.', 'gallery-for-spotwalla' );
+			}
+			if ( $id && ! $existing ) {
+				$errors['form'] = __( 'This map is no longer available. Reload the Maps tab.', 'gallery-for-spotwalla' );
+			}
+			if ( $errors ) {
+				wp_send_json_error( array( 'errors' => $errors ), 422 );
+			}
+			$item = $prepared['data'];
+		}
+		$renderer = new GFSW_Renderer( $this->store );
+		wp_send_json_success( array( 'html' => $renderer->map( $item ) ) );
+	}
+
+	/**
 	 * Returns the admin tab that manages an item type.
 	 *
 	 * @param string $type Item type.
@@ -139,11 +195,7 @@ final class GFSW_Admin {
 	 */
 	public function save() {
 		$this->authorize( 'gfsw_save' );
-		$input = array();
-		$defaults = array( 'type' => '', 'title' => '', 'description' => '', 'url' => '', 'show_title' => '', 'show_description' => '', 'member_title' => 'item', 'member_description' => 'item', 'fill_factor' => '', 'inherit_theme' => '', 'background' => '', 'color' => '', 'width' => '800', 'height' => '450' );
-		foreach ( $defaults as $field => $default ) {
-			$input[ $field ] = $this->posted( $field, $default );
-		}
+		$input = $this->submitted_fields();
 		$id         = absint( $this->posted( 'id' ) );
 		$type       = sanitize_key( $input['type'] );
 		$is_gallery = 'gallery' === $type;
