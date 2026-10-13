@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <style>
+    .traveler{display:none}
+    @supports (offset-path:path("M0 0L1 1")){
+      .traveler{display:block;offset-path:path("M48 190 C62 152 104 174 116 132 S166 118 194 64");offset-rotate:0deg;animation:travel 8s ease-in-out infinite}
+    }
+    @keyframes travel{0%,10%{offset-distance:0%}85%,100%{offset-distance:100%}}
+    @media (prefers-reduced-motion:reduce){.traveler{display:none;animation:none}}
+  </style>
+  <rect width="256" height="256" rx="24" fill="#f6f3ec"/>
+  <path d="M20 40L88 24 168 42 236 24V216L168 232 88 214 20 232Z" fill="#e5e9dc" stroke="#c4ccba" stroke-width="2"/>
+  <path d="M88 24V214L168 232V42Z" fill="#eef0e5"/>
+  <g fill="none" stroke="#c4ccba" stroke-width="2">
+    <path d="M20 82C60 58 88 100 128 76S184 54 236 80M20 120C68 92 96 146 140 112S208 98 236 118M20 162C66 128 100 184 144 152S196 132 236 154M20 204C64 172 116 220 158 192S206 174 236 190"/>
+    <path d="M88 24V214M168 42V232"/>
+  </g>
+  <path d="M38 32C112 68 58 104 150 146S200 180 226 220" fill="none" stroke="#aacbd0" stroke-width="9"/>
+  <path d="M48 190C62 152 104 174 116 132S166 118 194 64" fill="none" stroke="#f6f3ec" stroke-width="12" stroke-linecap="round"/>
+  <path d="M48 190C62 152 104 174 116 132S166 118 194 64" fill="none" stroke="#6941a5" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="48" cy="190" r="7" fill="#f6f3ec" stroke="#6941a5" stroke-width="4"/>
+  <path d="M194 40C182 40 174 49 174 60C174 76 194 94 194 94S214 76 214 60C214 49 206 40 194 40Z" fill="#6941a5"/>
+  <circle cx="194" cy="60" r="7" fill="#f6f3ec"/>
+  <circle class="traveler" r="7" fill="#fff" stroke="#6941a5" stroke-width="3"/>
+</svg>

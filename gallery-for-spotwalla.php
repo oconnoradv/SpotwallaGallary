@@ -3,7 +3,7 @@
  * Plugin Name: Gallery for SpotWalla
  * Plugin URI: https://github.com/oconnoradv/SpotwallaGallary
  * Description: Manage and embed public SpotWalla tracks, trips, retrospectives, and galleries. Independent project; not affiliated with or approved by SpotWalla.
- * Version: 1.0.9
+ * Version: 1.0.10
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Brian O'Connor
@@ -72,6 +72,7 @@ final class Gallery_For_SpotWalla {
 		add_action( 'admin_post_gfsw_save', array( __CLASS__, 'save' ) );
 		add_action( 'admin_post_gfsw_delete', array( __CLASS__, 'delete' ) );
 		add_action( 'admin_post_gfsw_settings', array( __CLASS__, 'settings' ) );
+		add_action( 'wp_ajax_gfsw_preview', array( self::$admin, 'preview' ) );
 		add_shortcode( 'gallery_for_spotwalla', array( __CLASS__, 'shortcode' ) );
 		if ( ! shortcode_exists( 'spotwalla_gallery' ) ) {
 			add_shortcode( 'spotwalla_gallery', array( __CLASS__, 'shortcode' ) );

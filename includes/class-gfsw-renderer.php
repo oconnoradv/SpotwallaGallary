@@ -99,8 +99,19 @@ final class GFSW_Renderer {
 		if ( $this->visible( $item, $gallery, 'description' ) ) {
 			$html .= '<p>' . nl2br( esc_html( $item['description'] ) ) . '</p>';
 		}
-		return $html . '<iframe src="' . esc_url( $this->embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
+		// SpotWalla's modules and map requests need its real origin, not a sandbox's opaque origin.
+		return $html . '<iframe src="' . esc_url( $this->embed_url( $url, $item, $gallery ) ) . '" title="' . esc_attr( $item['title'] ) . '" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin" width="100%" height="' . esc_attr( $height ) . '" style="display:block;width:100%;max-width:100%;border:0;" allowfullscreen></iframe>' .
 			'</article>';
+	}
+
+	/**
+	 * Renders validated map values for an administrator's unsaved preview.
+	 *
+	 * @param array $item Map values.
+	 * @return string HTML.
+	 */
+	public function map( array $item ) {
+		return in_array( $item['type'], GFSW_Config::MAP_TYPES, true ) ? $this->card( $item ) : '';
 	}
 
 

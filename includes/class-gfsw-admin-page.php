@@ -38,7 +38,7 @@ final class GFSW_Admin_Page {
 	}
 
 	/**
-	 * Adds admin CSS: a purple menu icon on every admin screen and the page header layout.
+	 * Adds the menu icon styling, and page-scoped header and preview assets.
 	 *
 	 * @return void
 	 */
@@ -55,6 +55,22 @@ final class GFSW_Admin_Page {
 		wp_register_style( 'gallery-for-spotwalla-admin', false, array(), $plugin['version'] );
 		wp_enqueue_style( 'gallery-for-spotwalla-admin' );
 		wp_add_inline_style( 'gallery-for-spotwalla-admin', $css );
+		$screen = get_current_screen();
+		if ( $screen && 'toplevel_page_' . GFSW_Config::SLUG === $screen->id ) {
+			wp_add_inline_style( 'gallery-for-spotwalla-admin', '.gfsw-preview{margin:24px 0;padding:16px;border:1px solid #8c8f94;background:#fff;max-width:100%;box-sizing:border-box}.gfsw-preview[hidden]{display:none}.gfsw-preview:focus{outline:2px solid #2271b1;outline-offset:2px}.gfsw-preview h2{margin-top:0}.gfsw-preview iframe{min-height:200px}.gfsw-preview-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}' );
+			wp_enqueue_script( 'gallery-for-spotwalla-preview', plugins_url( 'images/admin-preview.js', GFSW_PLUGIN_FILE ), array( 'jquery' ), $plugin['version'], true );
+			wp_localize_script(
+				'gallery-for-spotwalla-preview',
+				'gfswPreview',
+				array(
+					'url'     => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'gfsw_preview' ),
+					'loading' => __( 'Loading preview...', 'gallery-for-spotwalla' ),
+					'loaded'  => __( 'Preview rendered. SpotWalla may still be loading. If the map stays blank, check your public URL directly. Site-theme styling may differ from this admin preview.', 'gallery-for-spotwalla' ),
+					'error'   => __( 'Preview could not be loaded. Correct any errors below, or reload this page and try again.', 'gallery-for-spotwalla' ),
+				)
+			);
+		}
 	}
 
 	/**
@@ -66,7 +82,7 @@ final class GFSW_Admin_Page {
 		$plugin = get_file_data( GFSW_PLUGIN_FILE, array( 'version' => 'Version' ) );
 		?>
 		<div class="gfsw-header">
-			<img src="<?php echo esc_url( plugins_url( 'images/logo-256x256.jpg', GFSW_PLUGIN_FILE ) ); ?>" width="128" height="128" alt="" />
+			<img src="<?php echo esc_url( plugins_url( 'images/logo-map.svg', GFSW_PLUGIN_FILE ) ); ?>" width="128" height="128" alt="" />
 			<div>
 				<h1><?php esc_html_e( 'Gallery for SpotWalla', 'gallery-for-spotwalla' ); ?></h1>
 				<p class="gfsw-tagline">
@@ -472,9 +488,28 @@ final class GFSW_Admin_Page {
 						<p class="description"><?php esc_html_e( 'Widths shrink to fit small screens. Colors apply to the card, not the remote map.', 'gallery-for-spotwalla' ); ?></p>
 					</td></tr>
 				</table>
-				<?php submit_button( $save_label ); ?>
+				<?php if ( ! $is_gallery ) : ?>
+					<p class="submit gfsw-preview-actions">
+						<?php submit_button( $save_label, 'primary', 'submit', false ); ?>
+						<button type="button" class="button gfsw-preview-button" aria-controls="gfsw-preview"><?php esc_html_e( 'Preview', 'gallery-for-spotwalla' ); ?></button>
+					</p>
+					<p class="description"><?php esc_html_e( 'Preview your current entries without saving. Site-theme styling may differ on your published page.', 'gallery-for-spotwalla' ); ?></p>
+					<noscript><p><?php esc_html_e( 'Enable JavaScript to preview maps without saving.', 'gallery-for-spotwalla' ); ?></p></noscript>
+				<?php else : ?>
+					<?php submit_button( $save_label ); ?>
+				<?php endif; ?>
 				<?php if ( $edit ) : ?><a href="<?php echo esc_url( add_query_arg( array( 'page' => GFSW_Config::SLUG, 'tab' => $tab ), $base_url ) ); ?>"><?php esc_html_e( 'Cancel editing', 'gallery-for-spotwalla' ); ?></a><?php endif; ?>
 			</form>
+			<?php if ( ! $is_gallery ) : ?>
+				<section id="gfsw-preview" class="gfsw-preview" aria-labelledby="gfsw-preview-heading" tabindex="-1" hidden>
+					<div class="gfsw-preview-actions">
+						<h2 id="gfsw-preview-heading"><?php esc_html_e( 'Map preview', 'gallery-for-spotwalla' ); ?></h2>
+						<button type="button" id="gfsw-preview-close" class="button"><?php esc_html_e( 'Close preview', 'gallery-for-spotwalla' ); ?></button>
+					</div>
+					<p id="gfsw-preview-status" role="status" aria-live="polite"></p>
+					<div id="gfsw-preview-content"></div>
+				</section>
+			<?php endif; ?>
 			<h2><?php echo esc_html( $is_gallery ? __( 'Galleries', 'gallery-for-spotwalla' ) : __( 'Maps', 'gallery-for-spotwalla' ) ); ?></h2>
 			<table class="widefat striped">
 				<thead><tr><th><?php esc_html_e( 'ID', 'gallery-for-spotwalla' ); ?></th><th><?php esc_html_e( 'Title', 'gallery-for-spotwalla' ); ?></th><?php if ( ! $is_gallery ) : ?><th><?php esc_html_e( 'Type', 'gallery-for-spotwalla' ); ?></th><?php endif; ?><th><?php echo esc_html( $is_gallery ? __( 'Maps', 'gallery-for-spotwalla' ) : __( 'Gallery IDs', 'gallery-for-spotwalla' ) ); ?></th><th><?php esc_html_e( 'Shortcode', 'gallery-for-spotwalla' ); ?></th><th><?php esc_html_e( 'Actions', 'gallery-for-spotwalla' ); ?></th></tr></thead>
@@ -490,6 +525,9 @@ final class GFSW_Admin_Page {
 						<td><code><?php echo esc_html( '[gallery_for_spotwalla id="' . $row['id'] . '"]' ); ?></code></td>
 						<td>
 							<a href="<?php echo esc_url( add_query_arg( array( 'page' => GFSW_Config::SLUG, 'tab' => $tab, 'edit' => $row['id'] ), $base_url ) ); ?>"><?php esc_html_e( 'Edit', 'gallery-for-spotwalla' ); ?></a>
+							<?php if ( ! $is_gallery ) : ?>
+								<button type="button" class="button-link gfsw-preview-button" data-map-id="<?php echo esc_attr( $row['id'] ); ?>" aria-controls="gfsw-preview"><?php esc_html_e( 'Preview', 'gallery-for-spotwalla' ); ?><span class="screen-reader-text">: <?php echo esc_html( $row['title'] ); ?></span></button>
+							<?php endif; ?>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 								<input type="hidden" name="action" value="gfsw_delete"><input type="hidden" name="id" value="<?php echo esc_attr( $row['id'] ); ?>">
 								<?php wp_nonce_field( 'gfsw_delete_' . $row['id'] ); ?>
