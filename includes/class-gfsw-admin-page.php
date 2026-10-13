@@ -279,8 +279,8 @@ final class GFSW_Admin_Page {
 			<h2><?php esc_html_e( 'Recommended Plugins', 'gallery-for-spotwalla' ); ?></h2>
 			<p>
 				<?php
-				/* translators: 1: link to the Motorcycle Rally Scoring App project, 2: "(opens in a new tab)" text for screen readers. */
-				echo wp_kses( sprintf( __( 'For motorcycle rally event management and scoring, see the related <a href="%1$s" target="_blank" rel="noopener noreferrer">Motorcycle Rally Scoring App plugin</a>, a separate, optional O\'ConnorADV project%2$s.', 'gallery-for-spotwalla' ), esc_url( 'https://github.com/oconnoradv/MotorcycleRallyScoringApp' ), $this->new_tab_text() ), $allowed );
+				/* translators: 1: link to RallyQuestEngine, 2: "(opens in a new tab)" text for screen readers. */
+				echo wp_kses( sprintf( __( 'For competitive motorcycle rally scoring, see <a href="%1$s" target="_blank" rel="noopener noreferrer">RallyQuestEngine: A Competitive Motorcycle Rally Scoring Application%2$s</a>, a separate, optional O\'ConnorADV project. It is not required to use Gallery for SpotWalla.', 'gallery-for-spotwalla' ), esc_url( 'https://github.com/oconnoradv/RallyQuestEngine' ), $this->new_tab_text() ), $allowed );
 				?>
 			</p>
 			<h2><?php esc_html_e( 'Reporting issues', 'gallery-for-spotwalla' ); ?></h2>
